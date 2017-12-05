@@ -1,0 +1,128 @@
+version: '3'
+services:
+  postgresql-data:
+    image: ${HAB_ORIGIN:-chefdemo}/postgresql-data:stable
+    network_mode: none
+    volumes:
+      - postgresql-data:/hab/svc/postgresql/data
+
+  postgresql:
+    image: ${HAB_ORIGIN:-chefdemo}/postgresql:${VERSION:-stable}
+    network_mode: host
+    depends_on:
+      - postgresql-data
+    environment:
+      HAB_POSTGRESQL: |
+        [superuser]
+        name = 'hab'
+        password = 'chefrocks'
+    volumes:
+      - postgresql-data:/hab/svc/postgresql/data
+
+  rabbitmq:
+    image: ${HAB_ORIGIN:-chefdemo}/rabbitmq:${VERSION:-stable}
+    network_mode: host
+    command: --peer ${HOST_IP:-172.17.0.1}
+      --listen-gossip 0.0.0.0:9650
+      --listen-http 0.0.0.0:9660
+    depends_on:
+      - postgresql
+    environment:
+      HAB_RABBITMQ: |
+        [rabbitmq]
+        default_vhost = '/insights'
+        default_user = 'insights'
+        default_pass = 'chefrocks'
+        [rabbitmq.management]
+        enabled = true
+    volumes:
+      - rabbitmq-data:/hab/svc/rabbitmq/data
+
+  elasticsearch:
+    image: ${HAB_ORIGIN:-chefdemo}/elasticsearch:${VERSION:-stable}
+    network_mode: host
+    command: --peer ${HOST_IP:-172.17.0.1}
+      --listen-gossip 0.0.0.0:9651
+      --listen-http 0.0.0.0:9661
+    depends_on:
+      - postgresql
+    volumes:
+      - elasticsearch-data:/hab/svc/elasticsearch/data
+
+  logstash:
+    image: ${HAB_ORIGIN:-chefdemo}/logstash:${VERSION:-stable}
+    network_mode: host
+    command: --peer ${HOST_IP:-172.17.0.1}
+      --bind elasticsearch:elasticsearch.default
+      --bind rabbitmq:rabbitmq.default
+      --listen-gossip 0.0.0.0:9652
+      --listen-http 0.0.0.0:9662
+    depends_on:
+      - postgresql
+
+  workflow-server:
+    image: ${HAB_ORIGIN:-chefdemo}/workflow-server:latest
+    network_mode: host
+    command: --peer ${HOST_IP:-172.17.0.1}
+      --bind database:postgresql.default
+      --bind elasticsearch:elasticsearch.default
+      --bind rabbitmq:rabbitmq.default
+      --listen-gossip 0.0.0.0:9653
+      --listen-http 0.0.0.0:9663
+    depends_on:
+      - postgresql
+    volumes:
+      - maintenance:/var/opt/delivery/delivery/etc
+      - workflow-data:/hab/svc/workflow/data
+
+  notifications:
+    image: ${HAB_ORIGIN:-chefdemo}/notifications:${VERSION:-stable}
+    network_mode: host
+    command: --peer ${HOST_IP:-172.17.0.1}
+      --bind elasticsearch:elasticsearch.default
+      --bind rabbitmq:rabbitmq.default
+      --listen-gossip 0.0.0.0:9654
+      --listen-http 0.0.0.0:9664
+    depends_on:
+      - postgresql
+
+  compliance:
+    image: ${HAB_ORIGIN:-chefdemo}/compliance:${VERSION:-stable}
+    network_mode: host
+    command: --peer ${HOST_IP:-172.17.0.1}
+      --bind elasticsearch:elasticsearch.default
+      --listen-gossip 0.0.0.0:9655
+      --listen-http 0.0.0.0:9665
+    depends_on:
+      - postgresql
+    volumes:
+      - compliance-data:/hab/svc/compliance/data
+
+  automate-nginx:
+    image: ${HAB_ORIGIN:-chefdemo}/automate-nginx:latest
+    network_mode: host
+    command: --peer ${HOST_IP:-172.17.0.1}
+      --bind compliance:compliance.default
+      --bind elasticsearch:elasticsearch.default
+      --bind workflow:workflow-server.default
+      --bind notifications:notifications.default
+      --listen-gossip 0.0.0.0:9656
+      --listen-http 0.0.0.0:9666
+    depends_on:
+      - postgresql
+    environment:
+      HAB_AUTOMATE_NGINX: |
+        port = ${PILOT_HTTP_PORT:-8080}
+        ssl_port = ${PILOT_HTTPS_PORT:-8443}
+    volumes:
+      - maintenance:/var/opt/delivery/delivery/etc
+      - nginx-data:/hab/svc/automate-nginx/data
+
+volumes:
+  compliance-data:
+  elasticsearch-data:
+  maintenance:
+  nginx-data:
+  postgresql-data:
+  rabbitmq-data:
+  workflow-data:
