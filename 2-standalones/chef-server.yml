@@ -1,7 +1,7 @@
 version: '3'
 services:
   postgresql:
-    image: ${HAB_ORIGIN:-chefserverofficial}/postgresql:stable
+    image: ${HAB_ORIGIN:-chefserverofficial}/postgresql
     network_mode: host
     environment:
       HAB_POSTGRESQL: |
@@ -19,7 +19,7 @@ services:
       --listen-http 0.0.0.0:9660
 
   elasticsearch:
-    image: ${HAB_ORIGIN:-chefserverofficial}/elasticsearch:stable
+    image: ${HAB_ORIGIN:-chefserverofficial}/elasticsearch
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --listen-gossip 0.0.0.0:9651
