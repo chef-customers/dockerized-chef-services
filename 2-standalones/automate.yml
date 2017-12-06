@@ -73,7 +73,7 @@ services:
       - postgresql
     volumes:
       - maintenance:/var/opt/delivery/delivery/etc
-      - workflow-data:/hab/svc/workflow/data
+      - workflow-data:/hab/svc/workflow-server/data
 
   notifications:
     image: ${HAB_ORIGIN:-chefserverofficial}/notifications:${VERSION:-latest}
