@@ -7,7 +7,7 @@ services:
       - postgresql-data:/hab/svc/postgresql/data
 
   postgresql:
-    image: ${HAB_ORIGIN:-chefserverofficial}/postgresql:${VERSION:-stable}
+    image: ${HAB_ORIGIN:-chefserverofficial}/postgresql:${VERSION:-latest}
     network_mode: host
     depends_on:
       - postgresql-data
@@ -20,7 +20,7 @@ services:
       - postgresql-data:/hab/svc/postgresql/data
 
   rabbitmq:
-    image: ${HAB_ORIGIN:-chefserverofficial}/rabbitmq:${VERSION:-stable}
+    image: ${HAB_ORIGIN:-chefserverofficial}/rabbitmq:${VERSION:-latest}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --listen-gossip 0.0.0.0:9650
@@ -39,7 +39,7 @@ services:
       - rabbitmq-data:/hab/svc/rabbitmq/data
 
   elasticsearch:
-    image: ${HAB_ORIGIN:-chefserverofficial}/elasticsearch:${VERSION:-stable}
+    image: ${HAB_ORIGIN:-chefserverofficial}/elasticsearch:${VERSION:-latest}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --listen-gossip 0.0.0.0:9651
@@ -50,7 +50,7 @@ services:
       - elasticsearch-data:/hab/svc/elasticsearch/data
 
   logstash:
-    image: ${HAB_ORIGIN:-chefserverofficial}/logstash:${VERSION:-stable}
+    image: ${HAB_ORIGIN:-chefserverofficial}/logstash:${VERSION:-latest}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind elasticsearch:elasticsearch.default
@@ -61,7 +61,7 @@ services:
       - postgresql
 
   workflow-server:
-    image: ${HAB_ORIGIN:-chefserverofficial}/workflow-server:latest
+    image: ${HAB_ORIGIN:-chefserverofficial}/workflow-server:${VERSION:-latest}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind database:postgresql.default
@@ -76,7 +76,7 @@ services:
       - workflow-data:/hab/svc/workflow/data
 
   notifications:
-    image: ${HAB_ORIGIN:-chefserverofficial}/notifications:${VERSION:-stable}
+    image: ${HAB_ORIGIN:-chefserverofficial}/notifications:${VERSION:-latest}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind elasticsearch:elasticsearch.default
@@ -87,7 +87,7 @@ services:
       - postgresql
 
   compliance:
-    image: ${HAB_ORIGIN:-chefserverofficial}/compliance:${VERSION:-stable}
+    image: ${HAB_ORIGIN:-chefserverofficial}/compliance:${VERSION:-latest}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind elasticsearch:elasticsearch.default
@@ -99,7 +99,7 @@ services:
       - compliance-data:/hab/svc/compliance/data
 
   automate-nginx:
-    image: ${HAB_ORIGIN:-chefserverofficial}/automate-nginx:latest
+    image: ${HAB_ORIGIN:-chefserverofficial}/automate-nginx:${VERSION:-latest}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind compliance:compliance.default
