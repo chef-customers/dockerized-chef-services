@@ -1,3 +1,10 @@
+# Configurable environment variables:
+# HAB_ORIGIN - denotes the docker origin (dockerhub ID)
+# VERSION -  the version identifier tag on the packages
+# HOST_IP - the IP address of the docker host. 172.17.0.1 is commonly the docker0 interface which is fine
+# AUTOMATE_ENABLED - enable the Automate data collector (true or false)
+# AUTOMATE_SERVER - the IP address or hostname of the Automate server
+# AUTOMATE_TOKEN - the token for the Automate server data collector
 version: '3'
 services:
   postgresql:
@@ -71,6 +78,13 @@ services:
       --bind chef-server-ctl:chef-server-ctl.default
       --listen-gossip 0.0.0.0:9655
       --listen-http 0.0.0.0:9665
+    environment:
+      HAB_OC_ERCHEF: |
+        [data_collector]
+        enabled = ${AUTOMATE_ENABLED:-false}
+        server = "${AUTOMATE_SERVER:-localhost}"
+        port = 443
+        token = "${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506}"
 
   chef-server-nginx:
     image: ${HAB_ORIGIN:-chefserverofficial}/chef-server-nginx

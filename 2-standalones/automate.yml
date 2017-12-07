@@ -1,3 +1,11 @@
+# Configurable environment variables:
+# HAB_ORIGIN - denotes the docker origin (dockerhub ID)
+# VERSION -  the version identifier tag on the packages
+# HOST_IP - the IP address of the docker host. 172.17.0.1 is commonly the docker0 interface which is fine
+# ENTERPRISE - the name of the Automate enterprise to create
+# ADMIN_PASSWORD - the initial password to set for the 'admin' user in the Automate UI
+# AUTOMATE_TOKEN - the token for the Automate server data collector
+
 version: '3'
 services:
   postgresql-data:
@@ -71,6 +79,13 @@ services:
       --listen-http 0.0.0.0:9663
     depends_on:
       - postgresql
+    environment:
+      HAB_WORKFLOW_SERVER: |
+        enterprise = '${ENTERPRISE:-default}'
+        default_admin_password = '${ADMIN_PASSWORD:-chefrocks}'
+
+        [data_collector]
+        token = "${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506}"
     volumes:
       - maintenance:/var/opt/delivery/delivery/etc
       - workflow-data:/hab/svc/workflow-server/data
