@@ -24,6 +24,10 @@ services:
     command: --peer ${HOST_IP:-172.17.0.1}
       --listen-gossip 0.0.0.0:9650
       --listen-http 0.0.0.0:9660
+    environment:
+      HAB_CHEF_SERVER_CTL: |
+        [chef_server_api]
+        ip = '${HOST_IP:-172.17.0.1}'
 
   elasticsearch:
     image: ${HAB_ORIGIN:-chefserverofficial}/elasticsearch

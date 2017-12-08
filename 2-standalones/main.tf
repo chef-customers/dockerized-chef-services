@@ -8,11 +8,12 @@ variable "aws_vpc" { default = "vpc-41d45124" }
 variable "aws_subnet" { default = "subnet-7424b611" }
 variable "chef_server_instance_type" { default = "m5.xlarge" }
 variable "automate_server_instance_type" { default = "m5.2xlarge" }
+variable "default_security_group" { default = "sg-a4426bc0" }
 variable "aws_ami_user" { default = "centos" }
-variable "aws_key_pair_name" { default = "irving" }
-variable "aws_key_pair_file" { default = "~/.ssh/id_rsa" }
+variable "aws_key_pair_name" { default = "jmiller" }
+variable "aws_key_pair_file" { default = "~/.ssh/jmiller" }
 variable "tag_dept" { default = "SCE" }
-variable "tag_contact" { default = "irving" }
+variable "tag_contact" { default = "jmiller" }
 
 provider "aws" {
   region  = "${var.aws_region}"
@@ -41,6 +42,7 @@ resource "aws_instance" "automate_server" {
   instance_type               = "${var.automate_server_instance_type}"
   key_name                    = "${var.aws_key_pair_name}"
   subnet_id                   = "${var.aws_subnet}"
+  vpc_security_group_ids      = ["${var.default_security_group}"]
   associate_public_ip_address = true
   ebs_optimized               = true
 
@@ -79,6 +81,7 @@ resource "aws_instance" "chef_server" {
   instance_type               = "${var.chef_server_instance_type}"
   key_name                    = "${var.aws_key_pair_name}"
   subnet_id                   = "${var.aws_subnet}"
+  vpc_security_group_ids      = ["${var.default_security_group}"]
   associate_public_ip_address = true
   ebs_optimized               = true
 
@@ -98,6 +101,8 @@ resource "aws_instance" "chef_server" {
     inline = [
       "sudo iptables -A PREROUTING -t nat -p tcp --dport 80 -j REDIRECT --to-port 8080",
       "sudo iptables -A PREROUTING -t nat -p tcp --dport 443 -j REDIRECT --to-port 8443",
+      "sudo iptables -t nat -A OUTPUT -o lo -p tcp --dport 80 -j REDIRECT --to-port 8080",
+      "sudo iptables -t nat -A OUTPUT -o lo -p tcp --dport 443 -j REDIRECT --to-port 8443",
       "curl -LO https://raw.githubusercontent.com/chef-customers/dockerized-chef-services/master/2-standalones/chef-server.yml",
       "export AUTOMATE_ENABLED=true",
       "export AUTOMATE_SERVER=${aws_instance.automate_server.private_ip}",
