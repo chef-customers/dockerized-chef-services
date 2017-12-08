@@ -2,19 +2,26 @@ terraform {
   required_version = ">= 0.11.0"
 }
 
+# AWS variables - change these as needed
 variable "aws_region" { default = "us-west-2" }
 variable "aws_profile" { default = "default" }
 variable "aws_vpc" { default = "vpc-41d45124" }
 variable "aws_subnet" { default = "subnet-7424b611" }
 variable "chef_server_instance_type" { default = "m5.xlarge" }
 variable "automate_server_instance_type" { default = "m5.2xlarge" }
-variable "default_security_group" { default = "sg-a4426bc0" }
+variable "default_security_group" { default = "sg-c9beb2ac" }
 variable "aws_ami_user" { default = "centos" }
-variable "aws_key_pair_name" { default = "jmiller" }
-variable "aws_key_pair_file" { default = "~/.ssh/jmiller" }
-variable "tag_dept" { default = "SCE" }
-variable "tag_contact" { default = "jmiller" }
+variable "aws_key_pair_name" { }
+variable "aws_key_pair_file" { }
+variable "tag_dept" { }
+variable "tag_contact" { }
 
+# docker variables
+variable "enterprise_name" { default = "dockerize" }
+variable "admin_password" { default = "SuperSecurePassword" }
+variable "automate_token" { default = "93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506" } # must be 32 characters
+
+# 
 provider "aws" {
   region  = "${var.aws_region}"
   profile = "${var.aws_profile}" // uses ~/.aws/credentials by default
@@ -63,9 +70,9 @@ resource "aws_instance" "automate_server" {
       "sudo iptables -A PREROUTING -t nat -p tcp --dport 80 -j REDIRECT --to-port 8080",
       "sudo iptables -A PREROUTING -t nat -p tcp --dport 443 -j REDIRECT --to-port 8443",
       "curl -LO https://raw.githubusercontent.com/chef-customers/dockerized-chef-services/master/2-standalones/automate.yml",
-      "export ENTERPRISE=dockerize",
-      "export ADMIN_PASSWORD=ThisIsFun",
-      "export AUTOMATE_TOKEN=93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506",
+      "export ENTERPRISE=${var.enterprise_name}",
+      "export ADMIN_PASSWORD=${var.admin_password}",
+      "export AUTOMATE_TOKEN=${var.automate_token}",
       "sudo -E /usr/local/bin/docker-compose -f automate.yml up -d"
     ]
   }
@@ -106,7 +113,7 @@ resource "aws_instance" "chef_server" {
       "curl -LO https://raw.githubusercontent.com/chef-customers/dockerized-chef-services/master/2-standalones/chef-server.yml",
       "export AUTOMATE_ENABLED=true",
       "export AUTOMATE_SERVER=${aws_instance.automate_server.private_ip}",
-      "export AUTOMATE_TOKEN=93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506",
+      "export AUTOMATE_TOKEN=${var.automate_token}",
       "sudo -E /usr/local/bin/docker-compose -f chef-server.yml up -d"
     ]
   }

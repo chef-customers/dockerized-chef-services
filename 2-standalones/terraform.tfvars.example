@@ -1,0 +1,4 @@
+aws_key_pair_name = "irving"
+aws_key_pair_file = "~/.ssh/id_rsa"
+tag_dept = "SCE"
+tag_contact = "irving"

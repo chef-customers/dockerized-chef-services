@@ -39,3 +39,18 @@ export AUTOMATE_SERVER=automate-server-hostname-or-ip.mycompany.com
 export AUTOMATE_TOKEN=93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506
 sudo -E docker-compose -f chef-server.yml up -d
 ```
+
+
+# Operating it
+
+## Chef Server administrative functions
+
+Run the functional test suite to ensure Chef server is working:
+```
+docker-compose -f chef-server.yml exec chef-server-ctl bash /bin/chef-server-test
+```
+
+Add users, orgs, etc to the Chef server
+```
+docker-compose -f chef-server.yml exec chef-server-ctl bash /bin/chef-server-ctl
+```
