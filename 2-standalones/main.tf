@@ -21,7 +21,7 @@ variable "enterprise_name" { default = "dockerize" }
 variable "admin_password" { default = "SuperSecurePassword" }
 variable "automate_token" { default = "93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506" } # must be 32 characters
 
-# 
+#
 provider "aws" {
   region  = "${var.aws_region}"
   profile = "${var.aws_profile}" // uses ~/.aws/credentials by default
@@ -117,4 +117,20 @@ resource "aws_instance" "chef_server" {
       "sudo -E /usr/local/bin/docker-compose -f chef-server.yml up -d"
     ]
   }
+}
+
+output "automate_server" {
+  value = "https://${aws_instance.automate_server.public_dns}"
+}
+
+output "automate_admin_user" {
+  value = "admin"
+}
+
+output "automate_admin_password" {
+  value = "${var.admin_password}"
+}
+
+output "chef_server" {
+  value = "https://${aws_instance.chef_server.public_dns}"
 }
