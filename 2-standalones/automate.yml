@@ -6,7 +6,7 @@
 # ADMIN_PASSWORD - the initial password to set for the 'admin' user in the Automate UI
 # AUTOMATE_TOKEN - the token for the Automate server data collector
 
-version: '3'
+version: '2.1'
 services:
   postgresql:
     image: ${HAB_ORIGIN:-chefserverofficial}/postgresql:${VERSION:-latest}

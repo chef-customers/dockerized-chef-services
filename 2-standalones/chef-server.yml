@@ -5,7 +5,7 @@
 # AUTOMATE_ENABLED - enable the Automate data collector (true or false)
 # AUTOMATE_SERVER - the IP address or hostname of the Automate server
 # AUTOMATE_TOKEN - the token for the Automate server data collector
-version: '3'
+version: '2.1'
 services:
   postgresql:
     image: ${HAB_ORIGIN:-chefserverofficial}/postgresql

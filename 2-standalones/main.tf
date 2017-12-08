@@ -11,12 +11,14 @@ variable "chef_server_instance_type" { default = "m5.xlarge" }
 variable "automate_server_instance_type" { default = "m5.2xlarge" }
 variable "default_security_group" { default = "sg-c9beb2ac" }
 variable "aws_ami_user" { default = "centos" }
+variable "aws_ami_id" { default = "" }  # leave blank to auto-select the latest highperf CentOS 7 image
 variable "aws_key_pair_name" { }
 variable "aws_key_pair_file" { }
 variable "tag_dept" { }
 variable "tag_contact" { }
 
 # docker variables
+variable "docker_compose_path" { default = "/usr/local/bin/docker-compose" }
 variable "enterprise_name" { default = "dockerize" }
 variable "admin_password" { default = "SuperSecurePassword" }
 variable "automate_token" { default = "93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506" } # must be 32 characters
@@ -45,7 +47,7 @@ resource "aws_instance" "automate_server" {
     private_key = "${file("${var.aws_key_pair_file}")}"
   }
 
-  ami                         = "${data.aws_ami.centos.id}"
+  ami                         = "${var.aws_ami_id == "" ? data.aws_ami.centos.id : var.aws_ami_id}"
   instance_type               = "${var.automate_server_instance_type}"
   key_name                    = "${var.aws_key_pair_name}"
   subnet_id                   = "${var.aws_subnet}"
@@ -55,7 +57,7 @@ resource "aws_instance" "automate_server" {
 
   root_block_device {
     delete_on_termination = true
-    volume_size           = 100
+    volume_size           = 200
     volume_type           = "gp2"
   }
 
@@ -73,7 +75,7 @@ resource "aws_instance" "automate_server" {
       "export ENTERPRISE=${var.enterprise_name}",
       "export ADMIN_PASSWORD=${var.admin_password}",
       "export AUTOMATE_TOKEN=${var.automate_token}",
-      "sudo -E /usr/local/bin/docker-compose -f automate.yml up -d"
+      "sudo -E ${var.docker_compose_path} -f automate.yml up -d"
     ]
   }
 }
@@ -84,7 +86,7 @@ resource "aws_instance" "chef_server" {
     private_key = "${file("${var.aws_key_pair_file}")}"
   }
 
-  ami                         = "${data.aws_ami.centos.id}"
+  ami                         = "${var.aws_ami_id == "" ? data.aws_ami.centos.id : var.aws_ami_id}"
   instance_type               = "${var.chef_server_instance_type}"
   key_name                    = "${var.aws_key_pair_name}"
   subnet_id                   = "${var.aws_subnet}"
@@ -94,7 +96,7 @@ resource "aws_instance" "chef_server" {
 
   root_block_device {
     delete_on_termination = true
-    volume_size           = 30
+    volume_size           = 200
     volume_type           = "gp2"
   }
 
@@ -114,7 +116,7 @@ resource "aws_instance" "chef_server" {
       "export AUTOMATE_ENABLED=true",
       "export AUTOMATE_SERVER=${aws_instance.automate_server.private_ip}",
       "export AUTOMATE_TOKEN=${var.automate_token}",
-      "sudo -E /usr/local/bin/docker-compose -f chef-server.yml up -d"
+      "sudo -E ${var.docker_compose_path} -f chef-server.yml up -d"
     ]
   }
 }
