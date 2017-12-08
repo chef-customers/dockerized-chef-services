@@ -8,17 +8,9 @@
 
 version: '3'
 services:
-  postgresql-data:
-    image: ${HAB_ORIGIN:-chefdemo}/postgresql-data:stable
-    network_mode: none
-    volumes:
-      - postgresql-data:/hab/svc/postgresql/data
-
   postgresql:
     image: ${HAB_ORIGIN:-chefserverofficial}/postgresql:${VERSION:-latest}
     network_mode: host
-    depends_on:
-      - postgresql-data
     environment:
       HAB_POSTGRESQL: |
         [superuser]

@@ -89,6 +89,8 @@ services:
   chef-server-nginx:
     image: ${HAB_ORIGIN:-chefserverofficial}/chef-server-nginx
     network_mode: host
+    volumes:
+      - nginx-data:/hab/svc/chef-server-nginx/data
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind oc_erchef:oc_erchef.default
       --bind oc_bifrost:oc_bifrost.default
@@ -102,3 +104,4 @@ volumes:
   postgresql-data:
   elasticsearch-data:
   erchef-data:
+  nginx-data:
