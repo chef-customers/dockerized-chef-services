@@ -75,7 +75,7 @@ resource "aws_instance" "automate_server" {
       "export ENTERPRISE=${var.enterprise_name}",
       "export ADMIN_PASSWORD=${var.admin_password}",
       "export AUTOMATE_TOKEN=${var.automate_token}",
-      "sudo -E ${var.docker_compose_path} -f automate.yml up -d"
+      "sudo -E ${var.docker_compose_path} --no-ansi -f automate.yml up -d"
     ]
   }
 }
@@ -116,7 +116,7 @@ resource "aws_instance" "chef_server" {
       "export AUTOMATE_ENABLED=true",
       "export AUTOMATE_SERVER=${aws_instance.automate_server.private_ip}",
       "export AUTOMATE_TOKEN=${var.automate_token}",
-      "sudo -E ${var.docker_compose_path} -f chef-server.yml up -d"
+      "sudo -E ${var.docker_compose_path} --no-ansi -f chef-server.yml up -d"
     ]
   }
 }
