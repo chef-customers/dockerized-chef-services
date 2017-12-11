@@ -129,6 +129,11 @@ services:
       --listen-http 0.0.0.0:9665
     environment:
       HAB_OC_ERCHEF: |
+        [chef_authn]
+        keygen_cache_workers=2
+        keygen_cache_size=10
+        keygen_start_size=0
+        keygen_timeout=20000
         [data_collector]
         enabled = ${AUTOMATE_ENABLED:-false}
         server = "${AUTOMATE_SERVER:-localhost}"
