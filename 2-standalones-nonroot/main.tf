@@ -73,13 +73,13 @@ resource "aws_instance" "automate_server" {
       "sudo iptables -A PREROUTING -t nat -p tcp --dport 443 -j REDIRECT --to-port 8443",
       "curl -LO https://raw.githubusercontent.com/chef-customers/dockerized-chef-services/master/2-standalones-nonroot/automate.yml",
       "export USER_ID=332784",
-      "adduser -u 332784 -g 99 -m chef-dev-ux",
+      "sudo adduser -u 332784 -g 99 -m chef-dev-ux",
       "export DATA_MOUNT=/home/chef-dev-ux/data",
-      "for dir in postgresql rabbitmq elasticsearch maintenance workflow compliance nginx; do mkdir -p $DATA_MOUNT/$dir; chown chef-dev-ux:nobody $DATA_MOUNT/$dir; done",
+      "for dir in postgresql rabbitmq elasticsearch maintenance workflow compliance nginx; do sudo mkdir -p $DATA_MOUNT/$dir; sudo chown chef-dev-ux:nobody $DATA_MOUNT/$dir; done",
       "export ENTERPRISE=${var.enterprise_name}",
       "export ADMIN_PASSWORD=${var.admin_password}",
       "export AUTOMATE_TOKEN=${var.automate_token}",
-      "curl https://s3-us-west-2.amazonaws.com/sce-pub/MS/automate-nonroot-332784.tar.bz2 | docker load",
+      "curl https://s3-us-west-2.amazonaws.com/sce-pub/MS/automate-nonroot-332784.tar.bz2 | sudo docker load",
       "sudo -E ${var.docker_compose_path} --no-ansi -f automate.yml up -d"
     ]
   }
@@ -119,12 +119,13 @@ resource "aws_instance" "chef_server" {
       "sudo iptables -t nat -A OUTPUT -o lo -p tcp --dport 443 -j REDIRECT --to-port 8443",
       "curl -LO https://raw.githubusercontent.com/chef-customers/dockerized-chef-services/master/2-standalones-nonroot/chef-server.yml",
       "export USER_ID=332784",
-      "adduser -u 332784 -g 99 -m chef-dev-ux",
+      "sudo adduser -u 332784 -g 99 -m chef-dev-ux",
       "export DATA_MOUNT=/home/chef-dev-ux/data",
-      "for dir in postgresql elasticsearch nginx; do mkdir -p $DATA_MOUNT/$dir; chown chef-dev-ux:nobody $DATA_MOUNT/$dir; done",
+      "for dir in postgresql elasticsearch nginx; do sudo mkdir -p $DATA_MOUNT/$dir; sudo chown chef-dev-ux:nobody $DATA_MOUNT/$dir; done",
       "export AUTOMATE_ENABLED=true",
       "export AUTOMATE_SERVER=${aws_instance.automate_server.private_ip}",
       "export AUTOMATE_TOKEN=${var.automate_token}",
+      "curl https://s3-us-west-2.amazonaws.com/sce-pub/MS/chef-server-nonroot-332784.tar.bz2 | sudo docker load",
       "sudo -E ${var.docker_compose_path} --no-ansi -f chef-server.yml up -d"
     ]
   }
