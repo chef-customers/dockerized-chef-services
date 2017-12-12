@@ -7,6 +7,8 @@
 # AUTOMATE_TOKEN - the token for the Automate server data collector
 # DATA_MOUNT - the mount point for the data
 # USER_ID - the user ID to use
+# LABEL_NAME - the name of the custom docker label to use
+# LABEL_VALUE - the value to assign to the custom docker label
 
 version: '2.1'
 services:
@@ -19,6 +21,8 @@ services:
     - NET_BIND_SERVICE
     - SETUID
     - SETGID
+    labels:
+      - "${LABEL_NAME:-com.ms.user-}=${LABEL_VALUE:-Chef}"
     environment:
       HAB_POSTGRESQL: |
         [superuser]
@@ -36,6 +40,8 @@ services:
     - NET_BIND_SERVICE
     - SETUID
     - SETGID
+    labels:
+      - "${LABEL_NAME:-com.ms.user-}=${LABEL_VALUE:-Chef}"
     command: --peer ${HOST_IP:-172.17.0.1}
       --listen-gossip 0.0.0.0:9650
       --listen-http 0.0.0.0:9660
@@ -55,6 +61,8 @@ services:
     - NET_BIND_SERVICE
     - SETUID
     - SETGID
+    labels:
+      - "${LABEL_NAME:-com.ms.user-}=${LABEL_VALUE:-Chef}"
     command: --peer ${HOST_IP:-172.17.0.1}
       --listen-gossip 0.0.0.0:9651
       --listen-http 0.0.0.0:9661
@@ -74,6 +82,8 @@ services:
     - NET_BIND_SERVICE
     - SETUID
     - SETGID
+    labels:
+      - "${LABEL_NAME:-com.ms.user-}=${LABEL_VALUE:-Chef}"
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind database:postgresql.default
       --bind chef-server-ctl:chef-server-ctl.default
@@ -89,6 +99,8 @@ services:
     - NET_BIND_SERVICE
     - SETUID
     - SETGID
+    labels:
+      - "${LABEL_NAME:-com.ms.user-}=${LABEL_VALUE:-Chef}"
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind database:postgresql.default
       --bind chef-server-ctl:chef-server-ctl.default
@@ -104,6 +116,8 @@ services:
     - NET_BIND_SERVICE
     - SETUID
     - SETGID
+    labels:
+      - "${LABEL_NAME:-com.ms.user-}=${LABEL_VALUE:-Chef}"
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind database:postgresql.default
       --bind chef-server-ctl:chef-server-ctl.default
@@ -119,6 +133,8 @@ services:
     - NET_BIND_SERVICE
     - SETUID
     - SETGID
+    labels:
+      - "${LABEL_NAME:-com.ms.user-}=${LABEL_VALUE:-Chef}"
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind bookshelf:bookshelf.default
       --bind oc_bifrost:oc_bifrost.default
@@ -148,6 +164,8 @@ services:
     - NET_BIND_SERVICE
     - SETUID
     - SETGID
+    labels:
+      - "${LABEL_NAME:-com.ms.user-}=${LABEL_VALUE:-Chef}"
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind oc_erchef:oc_erchef.default
       --bind oc_bifrost:oc_bifrost.default
