@@ -7,6 +7,7 @@
 # AUTOMATE_TOKEN - the token for the Automate server data collector
 # DATA_MOUNT - the mount point for the data
 # USER_ID - the user ID to use
+# GROUP_ID - the group ID to use
 # LABEL_NAME - the name of the custom docker label to use
 # LABEL_VALUE - the value to assign to the custom docker label
 
@@ -16,7 +17,7 @@ services:
     image: ${HAB_ORIGIN:-chefservernonroot}/postgresql
     network_mode: host
     restart: always
-    user: ${USER_ID:-42}
+    user: ${USER_ID:-42}:${GROUP_ID:-42}
     cap_drop:
     - NET_BIND_SERVICE
     - SETUID
@@ -35,7 +36,7 @@ services:
     image: ${HAB_ORIGIN:-chefservernonroot}/chef-server-ctl
     network_mode: host
     restart: always
-    user: ${USER_ID:-42}
+    user: ${USER_ID:-42}:${GROUP_ID:-42}
     cap_drop:
     - NET_BIND_SERVICE
     - SETUID
@@ -56,7 +57,7 @@ services:
     image: ${HAB_ORIGIN:-chefservernonroot}/elasticsearch
     network_mode: host
     restart: always
-    user: ${USER_ID:-42}
+    user: ${USER_ID:-42}:${GROUP_ID:-42}
     cap_drop:
     - NET_BIND_SERVICE
     - SETUID
@@ -77,7 +78,7 @@ services:
     image: ${HAB_ORIGIN:-chefservernonroot}/oc_id
     network_mode: host
     restart: always
-    user: ${USER_ID:-42}
+    user: ${USER_ID:-42}:${GROUP_ID:-42}
     cap_drop:
     - NET_BIND_SERVICE
     - SETUID
@@ -94,7 +95,7 @@ services:
     image: ${HAB_ORIGIN:-chefservernonroot}/bookshelf
     network_mode: host
     restart: always
-    user: ${USER_ID:-42}
+    user: ${USER_ID:-42}:${GROUP_ID:-42}
     cap_drop:
     - NET_BIND_SERVICE
     - SETUID
@@ -111,7 +112,7 @@ services:
     image: ${HAB_ORIGIN:-chefservernonroot}/oc_bifrost
     network_mode: host
     restart: always
-    user: ${USER_ID:-42}
+    user: ${USER_ID:-42}:${GROUP_ID:-42}
     cap_drop:
     - NET_BIND_SERVICE
     - SETUID
@@ -128,7 +129,7 @@ services:
     image: ${HAB_ORIGIN:-chefservernonroot}/oc_erchef
     network_mode: host
     restart: always
-    user: ${USER_ID:-42}
+    user: ${USER_ID:-42}:${GROUP_ID:-42}
     cap_drop:
     - NET_BIND_SERVICE
     - SETUID
@@ -159,7 +160,7 @@ services:
     image: ${HAB_ORIGIN:-chefservernonroot}/chef-server-nginx
     network_mode: host
     restart: always
-    user: ${USER_ID:-42}
+    user: ${USER_ID:-42}:${GROUP_ID:-42}
     cap_drop:
     - NET_BIND_SERVICE
     - SETUID
