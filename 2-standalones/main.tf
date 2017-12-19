@@ -67,15 +67,20 @@ resource "aws_instance" "automate_server" {
     X-Contact = "${var.tag_contact}"
   }
 
+  provisioner "file" {
+    source      = "automate.yml"
+    destination = "/home/${var.aws_ami_user}/docker-compose.yml"
+  }
+
   provisioner "remote-exec" {
     inline = [
       "sudo iptables -A PREROUTING -t nat -p tcp --dport 80 -j REDIRECT --to-port 8080",
       "sudo iptables -A PREROUTING -t nat -p tcp --dport 443 -j REDIRECT --to-port 8443",
-      "curl -LO https://raw.githubusercontent.com/chef-customers/dockerized-chef-services/master/2-standalones/automate.yml",
       "export ENTERPRISE=${var.enterprise_name}",
       "export ADMIN_PASSWORD=${var.admin_password}",
       "export AUTOMATE_TOKEN=${var.automate_token}",
-      "sudo -E ${var.docker_compose_path} --no-ansi -f automate.yml up -d"
+      "sleep 10",
+      "sudo -E ${var.docker_compose_path} --no-ansi up -d"
     ]
   }
 }
@@ -106,17 +111,22 @@ resource "aws_instance" "chef_server" {
     X-Contact = "${var.tag_contact}"
   }
 
+  provisioner "file" {
+    source      = "chef-server.yml"
+    destination = "/home/${var.aws_ami_user}/docker-compose.yml"
+  }
+
   provisioner "remote-exec" {
     inline = [
       "sudo iptables -A PREROUTING -t nat -p tcp --dport 80 -j REDIRECT --to-port 8080",
       "sudo iptables -A PREROUTING -t nat -p tcp --dport 443 -j REDIRECT --to-port 8443",
       "sudo iptables -t nat -A OUTPUT -o lo -p tcp --dport 80 -j REDIRECT --to-port 8080",
       "sudo iptables -t nat -A OUTPUT -o lo -p tcp --dport 443 -j REDIRECT --to-port 8443",
-      "curl -LO https://raw.githubusercontent.com/chef-customers/dockerized-chef-services/master/2-standalones/chef-server.yml",
       "export AUTOMATE_ENABLED=true",
       "export AUTOMATE_SERVER=${aws_instance.automate_server.private_ip}",
       "export AUTOMATE_TOKEN=${var.automate_token}",
-      "sudo -E ${var.docker_compose_path} --no-ansi -f chef-server.yml up -d"
+      "sleep 10",
+      "sudo -E ${var.docker_compose_path} --no-ansi up -d"
     ]
   }
 }
