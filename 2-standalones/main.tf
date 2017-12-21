@@ -18,7 +18,7 @@ variable "tag_dept" { }
 variable "tag_contact" { }
 
 # docker variables
-variable "docker_compose_path" { default = "/usr/local/bin/docker-compose" }
+variable "docker_compose_path" { default = "/usr/bin/docker-compose" }
 variable "enterprise_name" { default = "dockerize" }
 variable "admin_password" { default = "SuperSecurePassword" }
 variable "automate_token" { default = "93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506" } # must be 32 characters
