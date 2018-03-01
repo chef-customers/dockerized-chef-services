@@ -16,7 +16,7 @@ The following directories must exist under `$DATA_MOUNT` and be owned by `$USER_
 
 If specifying an arbitrary and random uid/gid for the container processes,
 you must bind mount a [passwd](passwd_example.md) and [group](group_example.md) file with those users into the container.
-The example files provided should work just fine.
+The example files provided should work just fine after replacing the `testuser` entry with your own.
 
 ```shell
 
