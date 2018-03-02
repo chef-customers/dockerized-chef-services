@@ -15,6 +15,10 @@ The [2 Standalones configuration](https://github.com/chef-customers/dockerized-c
 * Each host forms its own non-permanent Habitat gossip ring, sharing service discovery data intra-host only
 * Environment variables are used to configure settings from the default
 
+## Docker Images
+All docker images are under the [chefserverofficial](https://hub.docker.com/u/chefserverofficial/) origin on Docker Hub.
+These images have been exported from [Habitat](http://bldr.habitat.sh/#/origins/chef-server/packages) packages and support running the processes with random, arbitrary user and/or group id.
+
 ## Deploying it
 
 ### Using AWS and Terraform
@@ -45,6 +49,8 @@ For Chef Server:
 * postgresql
 * elasticsearch
 * nginx
+
+The directories above should be created prior and are expected to be stable to provide persistent storage to the containers.
 
 ### Arbitrary Random User/Group ids
 
