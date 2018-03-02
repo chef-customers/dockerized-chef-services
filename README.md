@@ -125,11 +125,46 @@ export LC_ALL=en_US.UTF-8
 ## Chef Server administrative functions
 
 Run the functional test suite to ensure Chef server is working:
+
+docker-compose:
+
 ```
-docker-compose -f chef-server.yml exec chef-server-ctl bash /bin/chef-server-test
+docker-compose -f chef-server.yml exec chef-server-ctl chef-server-test
+```
+
+docker run:
+
+```
+docker exec -it <container id of chef-server-ctl> chef-server-test
 ```
 
 Add users, orgs, etc to the Chef server
+
+docker-compose:
+
 ```
-docker-compose -f chef-server.yml exec chef-server-ctl bash /bin/chef-server-ctl
+docker-compose -f chef-server.yml exec chef-server-ctl chef-server-ctl <command> (subcommands)
+```
+
+docker run:
+
+```
+docker exec -it <container id of chef-server-ctl> <command> (subcommands)
+```
+
+## Logging
+All container logs are directed to STDOUT. You should employ a Docker logging mechanism to ensure those logs are captured and aggregated in a central location.
+
+To view the status of any container:
+
+docker-compose:
+
+```
+docker-compose logs <container name>
+```
+
+docker run:
+
+```
+docker logs <container id>
 ```
