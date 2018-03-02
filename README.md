@@ -175,12 +175,18 @@ docker run:
 docker logs <container id>
 ```
 
-For Chef Server, the `oc_erchef` and for Automate the `workflow-server` container output clear status health checks such as the following:
+An easy way to check on the health of Chef Server and Automate is to look for the health checks from `oc_erchef` and `workflow-server` containers accordingly. They will look like:
 
 ```
-oc_erchef.default hook[health_check]:(HK): {"status":"pong","upstreams":{"chef_elasticsearch":"pong","chef_sql":"pong","oc_chef_authz":"pong"},"keygen":{"keys":10,"max":10,"max_workers":10,"cur_max_workers":10,"inflight":0,"avail_workers":10,"start_size":0},"indexing":{"mode":"batch"}}
+oc_erchef.default hook[health_check]:(HK): {"status":"pong","upstreams":{"chef_elasticsearch":"pong","chef_sql":"pong","oc_chef_authz":"pong"},
+"keygen":{"keys":10,"max":10,"max_workers":10,"cur_max_workers":10,"inflight":0,"avail_workers":10,"start_size":0},"indexing":{"mode":"batch"}}
 ```
 
 ```
-workflow-server.default hook[health_check]:(HK): {"status":"pong","configuration_mode":"standalone","fips_mode":"false","upstreams":[{"postgres":{"status":"pong"},"lsyncd":{"status":"not_running"},"elasticsearch":{"status":"pong","cluster_name":"elasticsearch","status":"yellow","timed_out":false,"number_of_nodes":1,"number_of_data_nodes":1,"active_primary_shards":20,"active_shards":20,"relocating_shards":0,"initializing_shards":0,"unassigned_shards":20,"delayed_unassigned_shards":0,"number_of_pending_tasks":0,"number_of_in_flight_fetch":0,"task_max_waiting_in_queue_millis":0,"active_shards_percent_as_number":50.0},"rabbitmq":{"status":"pong","vhost_aliveness":{"status":"pong"},"node_health":{"status":"pong"}}}]}
+workflow-server.default hook[health_check]:(HK): {"status":"pong","configuration_mode":"standalone","fips_mode":"false","upstreams":
+[{"postgres":{"status":"pong"},"lsyncd":{"status":"not_running"},"elasticsearch":{"status":"pong","cluster_name":"elasticsearch","status":
+"yellow","timed_out":false,"number_of_nodes":1,"number_of_data_nodes":1,"active_primary_shards":20,"active_shards":20,"relocating_shards":0,
+"initializing_shards":0,"unassigned_shards":20,"delayed_unassigned_shards":0,"number_of_pending_tasks":0,"number_of_in_flight_fetch":0,
+"task_max_waiting_in_queue_millis":0,"active_shards_percent_as_number":50.0},"rabbitmq":{"status":"pong","vhost_aliveness":{"status":
+"pong"},"node_health":{"status":"pong"}}}]}
 ```
