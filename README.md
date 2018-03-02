@@ -10,14 +10,11 @@ The [2 Standalones configuration](https://github.com/chef-customers/dockerized-c
 ## How it works
 
 * All of the Chef Server and Chef Automate services have been packaged as Habitat `.hart` files here: [https://bldr.habitat.sh/#/pkgs/chef-server]
- * and exported to docker containers here:  [https://hub.docker.com/r/chefserverofficial/]
+* and exported to docker containers here:  [https://hub.docker.com/r/chefserverofficial/]
+* These containers support running under a random, arbitrary user and/or group id.
 * Launch containers via `docker-compose` or `docker run ...`  Compose files have been created which pull the docker containers and run them using Host mode networking. Alternatively, [docker run Chef Server](https://github.com/chef-customers/dockerized-chef-services/tree/master/docker_run_chef_server.md) and [docker run Automate](https://github.com/chef-customers/dockerized-chef-services/tree/master/docker_run_automate.md) files demonstrate how to launch via `docker run ...` commands.
 * Each host forms its own non-permanent Habitat gossip ring, sharing service discovery data intra-host only
 * Environment variables are used to configure settings from the default
-
-## Docker Images
-All docker images are under the [chefserverofficial](https://hub.docker.com/u/chefserverofficial/) origin on Docker Hub.
-These images have been exported from [Habitat](http://bldr.habitat.sh/#/origins/chef-server/packages) packages and support running the processes with random, arbitrary user and/or group id.
 
 ## Deploying it
 
@@ -81,7 +78,7 @@ sudo -E docker-compose -f chef-server.yml up -d
 ```
 
 ### Docker Run
-1. copy the bash script contents of `docker_run_automate.md` file to the first host, rename it to .sh, and run:
+1. copy the bash script contents of [docker_run_automate.md] file to the first host, rename it to .sh, and run:
 ```
 export ENTERPRISE=mycompany
 export ADMIN_PASSWORD=SuperSecurePassword42
@@ -91,7 +88,7 @@ export GROUP_ID=8888
 export DATA_MOUNT=/path/to/persistent/storage/directory
 ./docker_run_automate.sh
 ```
-2. copy the bash script contents of `docker_run_chef_server.md` file to the second host, rename it to .sh, and run:
+2. copy the bash script contents of [docker_run_chef_server.md] file to the second host, rename it to .sh, and run:
 ```
 export AUTOMATE_ENABLED=true
 export AUTOMATE_SERVER=automate-server-hostname-or-ip.mycompany.com
