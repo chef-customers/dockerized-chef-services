@@ -23,9 +23,34 @@ Customize the `main.tf` [Terraform](terraform.io) configuration file and deploy 
 
 ### Manually
 
-
 1. Provision 2 hosts that are running a modern Linux OS (RHEL 7 or Ubuntu 16.04) as well as recent versions of Docker and optionally docker-compose
 2. Attach SAN (block) storage to each host for storing persistent data
+
+### Data Directories
+
+Each Host must have directories created under `$DATA_MOUNT` and be owned by `$USER_ID`:
+
+For Automate 1.x:
+
+* postgresql
+* rabbitmq
+* elasticsearch
+* maintenance
+* workflow
+* compliance
+* nginx
+
+For Chef Server:
+
+* postgresql
+* elasticsearch
+* nginx
+
+### Arbitrary Random User/Group ids
+
+If specifying an arbitrary and random uid/gid for the container processes,
+you must bind mount a [passwd](passwd_example.md) and [group](group_example.md) file with those users into the container.
+The example files provided should work just fine after replacing the `testuser` entry with your own.
 
 #### Docker Compose
 1. copy the `automate.yml` file to the first host, and run:
@@ -33,6 +58,9 @@ Customize the `main.tf` [Terraform](terraform.io) configuration file and deploy 
 export ENTERPRISE=mycompany
 export ADMIN_PASSWORD=SuperSecurePassword42
 export AUTOMATE_TOKEN=93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506
+export USER_ID=9999
+export GROUP_ID=8888
+export DATA_MOUNT=/path/to/persistent/storage/directory
 sudo -E docker-compose -f automate.yml up -d
 ```
 2. copy the `chef-server.yml` file to the second host and run:
@@ -40,6 +68,9 @@ sudo -E docker-compose -f automate.yml up -d
 export AUTOMATE_ENABLED=true
 export AUTOMATE_SERVER=automate-server-hostname-or-ip.mycompany.com
 export AUTOMATE_TOKEN=93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506
+export USER_ID=9999
+export GROUP_ID=8888
+export DATA_MOUNT=/path/to/persistent/storage/directory
 sudo -E docker-compose -f chef-server.yml up -d
 ```
 
@@ -49,6 +80,9 @@ sudo -E docker-compose -f chef-server.yml up -d
 export ENTERPRISE=mycompany
 export ADMIN_PASSWORD=SuperSecurePassword42
 export AUTOMATE_TOKEN=93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506
+export USER_ID=9999
+export GROUP_ID=8888
+export DATA_MOUNT=/path/to/persistent/storage/directory
 ./docker_run_automate.sh
 ```
 2. copy the bash script contents of `docker_run_chef_server.md` file to the second host, rename it to .sh, and run:
@@ -56,6 +90,9 @@ export AUTOMATE_TOKEN=93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cb
 export AUTOMATE_ENABLED=true
 export AUTOMATE_SERVER=automate-server-hostname-or-ip.mycompany.com
 export AUTOMATE_TOKEN=93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506
+export USER_ID=9999
+export GROUP_ID=8888
+export DATA_MOUNT=/path/to/persistent/storage/directory
 ./docker_run_chef_server.sh
 ```
 
