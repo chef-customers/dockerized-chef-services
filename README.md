@@ -78,7 +78,7 @@ sudo -E docker-compose -f chef-server.yml up -d
 ```
 
 ### Docker Run
-1. copy the bash script contents of [docker_run_automate.md] file to the first host, rename it to .sh, and run:
+1. copy the bash script contents of [docker_run_automate.md](docker_run_automate.md) file to the first host, rename it to .sh, and run:
 ```
 export ENTERPRISE=mycompany
 export ADMIN_PASSWORD=SuperSecurePassword42
@@ -88,7 +88,7 @@ export GROUP_ID=8888
 export DATA_MOUNT=/path/to/persistent/storage/directory
 ./docker_run_automate.sh
 ```
-2. copy the bash script contents of [docker_run_chef_server.md] file to the second host, rename it to .sh, and run:
+2. copy the bash script contents of [docker_run_chef_server.md](docker_run_chef_server.md) file to the second host, rename it to .sh, and run:
 ```
 export AUTOMATE_ENABLED=true
 export AUTOMATE_SERVER=automate-server-hostname-or-ip.mycompany.com
