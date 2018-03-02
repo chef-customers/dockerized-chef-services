@@ -146,13 +146,13 @@ Add users, orgs, etc to the Chef server
 docker-compose:
 
 ```
-docker-compose -f chef-server.yml exec chef-server-ctl chef-server-ctl <command> (subcommands)
+docker-compose -f chef-server.yml exec chef-server-ctl chef-server-ctl (subcommands)
 ```
 
 docker run:
 
 ```
-docker exec -it <container id of chef-server-ctl> <command> (subcommands)
+docker exec -it <container id of chef-server-ctl> chef-server-ctl (subcommands)
 ```
 
 ## Logging
