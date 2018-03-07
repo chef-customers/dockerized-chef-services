@@ -14,6 +14,9 @@ If specifying an arbitrary and random uid/gid for the container processes,
 you must bind mount a [passwd](passwd_example.md) and [group](group_example.md) file with those users into the container.
 The example files provided should work just fine after replacing the `testuser` entry with your own.
 
+In addition, you must provide volumes for `/hab/sup` and `/hab/svc` as described [here](https://www.habitat.sh/docs/best-practices/#running-habitat-linux-containers) and as seen below with the SERVICE_sup_state and SERVICE_svc_state volumes.
+
+
 ```bash
 
 # Configurable shell environment variables:
@@ -46,8 +49,8 @@ name = 'hab'
 password = 'chefrocks'
 " \
   --env="PATH=/bin" \
-  --volume $(pwd)/passwd:/etc/passwd:ro \
-  --volume $(pwd)/group:/etc/group:ro \
+  --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
+  --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
   --mount type=volume,src=postgresql_sup_state,dst=/hab/sup \
   --volume ${DATA_MOUNT:-/mnt/hab}/postgresql:/hab/svc \
   --cap-drop="NET_BIND_SERVICE" \
@@ -81,8 +84,6 @@ ip = \"${HOST_IP:-172.17.0.1}\"
 token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506}\"
 " \
   --env="PATH=/bin" \
-  --volume $(pwd)/passwd:/etc/passwd:ro \
-  --volume $(pwd)/group:/etc/group:ro \
   --mount type=volume,src=chef-server-ctl_sup_state,dst=/hab/sup \
   --mount type=volume,src=chef-server-ctl_svc_state,dst=/hab/svc \
   --cap-drop="NET_BIND_SERVICE" \
@@ -106,8 +107,6 @@ sudo docker volume create --driver local \
 sudo -E docker run --rm -it \
   --name="elasticsearch" \
   --env="PATH=/bin" \
-  --volume $(pwd)/passwd:/etc/passwd:ro \
-  --volume $(pwd)/group:/etc/group:ro \
   --mount type=volume,src=elasticsearch_sup_state,dst=/hab/sup \
   --volume ${DATA_MOUNT:-/mnt/hab}/elasticsearch:/hab/svc \
   --cap-drop="NET_BIND_SERVICE" \
@@ -138,8 +137,6 @@ sudo docker volume create --driver local \
 sudo -E docker run --rm -it \
   --name="oc_id" \
   --env="PATH=/bin" \
-  --volume $(pwd)/passwd:/etc/passwd:ro \
-  --volume $(pwd)/group:/etc/group:ro \
   --mount type=volume,src=oc_id_sup_state,dst=/hab/sup \
   --mount type=volume,src=oc_id_svc_state,dst=/hab/svc \
   --cap-drop="NET_BIND_SERVICE" \
@@ -169,8 +166,6 @@ sudo docker volume create --driver local \
 sudo -E docker run --rm -it \
   --name="bookshelf" \
   --env="PATH=/bin" \
-  --volume $(pwd)/passwd:/etc/passwd:ro \
-  --volume $(pwd)/group:/etc/group:ro \
   --mount type=volume,src=bookshelf_sup_state,dst=/hab/sup \
   --mount type=volume,src=bookshelf_svc_state,dst=/hab/svc \
   --cap-drop="NET_BIND_SERVICE" \
@@ -200,8 +195,6 @@ sudo docker volume create --driver local \
 sudo -E docker run --rm -it \
   --name="oc_bifrost" \
   --env="PATH=/bin" \
-  --volume $(pwd)/passwd:/etc/passwd:ro \
-  --volume $(pwd)/group:/etc/group:ro \
   --mount type=volume,src=oc_bifrost_sup_state,dst=/hab/sup \
   --mount type=volume,src=oc_bifrost_svc_state,dst=/hab/svc \
   --cap-drop="NET_BIND_SERVICE" \
@@ -241,8 +234,6 @@ keygen_start_size = 0
 keygen_timeout = 20000
 " \
   --env="PATH=/bin" \
-  --volume $(pwd)/passwd:/etc/passwd:ro \
-  --volume $(pwd)/group:/etc/group:ro \
   --mount type=volume,src=oc_erchef_sup_state,dst=/hab/sup \
   --mount type=volume,src=oc_erchef_svc_state,dst=/hab/svc \
   --cap-drop="NET_BIND_SERVICE" \
@@ -263,11 +254,9 @@ sudo docker volume create --driver local \
        --opt o=size=100m,uid=$USER_ID \
        chef-server-nginx_sup_state
 
-sudo -E docker run \
+sudo -E docker run --rm -it \
   --name="chef-server-nginx" \
   --env="PATH=/bin" \
-  --volume $(pwd)/passwd:/etc/passwd:ro \
-  --volume $(pwd)/group:/etc/group:ro \
   --mount type=volume,src=chef-server-nginx_sup_state,dst=/hab/sup \
   --volume ${DATA_MOUNT:-/mnt/hab}/nginx:/hab/svc \
   --cap-drop="NET_BIND_SERVICE" \
