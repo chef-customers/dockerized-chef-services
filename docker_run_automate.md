@@ -238,7 +238,7 @@ sudo docker volume create --driver local \
        --opt o=size=100m,uid=$USER_ID \
        automate-nginx_sup_state
 
-sudo -E docker run \
+sudo -E docker run --rm -it \
   --name="automate-nginx" \
   --env="HAB_AUTOMATE_NGINX: |
 port = ${PILOT_HTTP_PORT:-8080}
