@@ -26,6 +26,7 @@ Customize the `main.tf` [Terraform](terraform.io) configuration file and deploy 
 
 1. Provision 2 hosts that are running a modern Linux OS (RHEL 7 or Ubuntu 16.04) as well as recent versions of Docker and optionally docker-compose
 2. Attach SAN (block) storage to each host for storing persistent data
+3. Read [Deployment Notes](https://github.com/chef-customers/dockerized-chef-services#deployment-notes)
 
 ### Data Directories
 
@@ -101,7 +102,8 @@ export DATA_MOUNT=/path/to/persistent/storage/directory
 
 ## Deployment notes
 
-some environments may require the following, particularly if Elasticsearch refuses to start:
+Some environments may require the following, particularly if Elasticsearch refuses to start:
+
 ```
 sudo cat > /etc/sysctl.d/00-chef.conf <<EOF
 vm.swappiness=10
@@ -118,10 +120,32 @@ sudo cat > /etc/security/limits.d/20-nproc.conf<<EOF
 *   soft  nofile    1048576
 *   hard  nofile    1048576
 EOF
+```
 
+Ensuring that locale is UTF-8 is necessary if not already set:
+
+```
 export LC_ALL=en_US.UTF-8
 ```
 
+For the non-root images, all the services run on non-privileged ports. To enable seamless external access
+to TCP ports 80 and 443 the following iptables rules must be applied.
+
+On the Chef Server Host:
+
+```
+sudo iptables -A PREROUTING -t nat -p tcp --dport 80 -j REDIRECT --to-port 8080
+sudo iptables -A PREROUTING -t nat -p tcp --dport 443 -j REDIRECT --to-port 8443
+sudo iptables -t nat -A OUTPUT -o lo -p tcp --dport 80 -j REDIRECT --to-port 8080
+sudo iptables -t nat -A OUTPUT -o lo -p tcp --dport 443 -j REDIRECT --to-port 8443
+```
+
+On the Automate Host:
+
+```
+sudo iptables -A PREROUTING -t nat -p tcp --dport 80 -j REDIRECT --to-port 8080
+sudo iptables -A PREROUTING -t nat -p tcp --dport 443 -j REDIRECT --to-port 8443
+```
 
 # Operating it
 
