@@ -80,6 +80,7 @@ sudo -E docker run --rm -it \
   --name="chef-server-ctl" \
   --env="HAB_CHEF_SERVER_CTL=[chef_server_api]
 ip = \"${HOST_IP:-172.17.0.1}\"
+ssl_port = "8443"
 [secrets.data_collector]
 token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506}\"
 " \

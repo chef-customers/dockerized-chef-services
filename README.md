@@ -130,8 +130,9 @@ export LC_ALL=en_US.UTF-8
 
 For the non-root images, all the services run on non-privileged ports. To enable seamless external access
 to TCP ports 80 and 443 the following iptables rules must be applied.
+Alternatively, use a Load Balancer.
 
-On the Chef Server Host:
+If not using a LB, on the Chef Server Host run:
 
 ```
 sudo iptables -A PREROUTING -t nat -p tcp --dport 80 -j REDIRECT --to-port 8080
@@ -140,7 +141,7 @@ sudo iptables -t nat -A OUTPUT -o lo -p tcp --dport 80 -j REDIRECT --to-port 808
 sudo iptables -t nat -A OUTPUT -o lo -p tcp --dport 443 -j REDIRECT --to-port 8443
 ```
 
-On the Automate Host:
+And on the Automate Host:
 
 ```
 sudo iptables -A PREROUTING -t nat -p tcp --dport 80 -j REDIRECT --to-port 8080
