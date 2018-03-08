@@ -94,7 +94,7 @@ token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb
   --network=host \
   --detach=true \
   ${DOCKER_ORIGIN:-chefserverofficial}/chef-server-ctl:${VERSION:-latest} \
-  --peer ${HOST_IP:-172.17.0.1} -bind chef-server-nginx:chef-server-nginx.default --listen-gossip 0.0.0.0:9650 --listen-http 0.0.0.0:9660
+  --peer ${HOST_IP:-172.17.0.1} --bind chef-server-nginx:chef-server-nginx.default --listen-gossip 0.0.0.0:9650 --listen-http 0.0.0.0:9660
 
 # elasticsearch
 
