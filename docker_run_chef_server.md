@@ -18,6 +18,7 @@ In addition, you must provide volumes for `/hab/sup` and `/hab/svc` as described
 
 
 ```bash
+#!/bin/bash
 
 # Configurable shell environment variables:
 # DOCKER_ORIGIN - denotes the docker origin (dockerhub ID) or default to `chefserverofficial`
@@ -30,9 +31,6 @@ In addition, you must provide volumes for `/hab/sup` and `/hab/svc` as described
 # USER_ID - the user ID to use (numeric)
 # GROUP_ID - the group ID to use (numeric)
 
-
-# Docker Services
-#
 
 # postgresql
 
@@ -80,10 +78,13 @@ sudo -E docker run --rm -it \
   --name="chef-server-ctl" \
   --env="HAB_CHEF_SERVER_CTL=[chef_server_api]
 ip = \"${HOST_IP:-172.17.0.1}\"
+ssl_port = "8443"
 [secrets.data_collector]
 token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506}\"
 " \
   --env="PATH=/bin" \
+  --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
+  --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
   --mount type=volume,src=chef-server-ctl_sup_state,dst=/hab/sup \
   --mount type=volume,src=chef-server-ctl_svc_state,dst=/hab/svc \
   --cap-drop="NET_BIND_SERVICE" \
@@ -94,7 +95,7 @@ token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb
   --network=host \
   --detach=true \
   ${DOCKER_ORIGIN:-chefserverofficial}/chef-server-ctl:${VERSION:-latest} \
-  --peer ${HOST_IP:-172.17.0.1} --bind chef-server-nginx:chef-server-nginx.default --listen-gossip 0.0.0.0:9650 --listen-http 0.0.0.0:9660
+  --peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9650 --listen-http 0.0.0.0:9660
 
 # elasticsearch
 
@@ -107,6 +108,8 @@ sudo docker volume create --driver local \
 sudo -E docker run --rm -it \
   --name="elasticsearch" \
   --env="PATH=/bin" \
+  --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
+  --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
   --mount type=volume,src=elasticsearch_sup_state,dst=/hab/sup \
   --volume ${DATA_MOUNT:-/mnt/hab}/elasticsearch:/hab/svc \
   --cap-drop="NET_BIND_SERVICE" \
@@ -137,6 +140,8 @@ sudo docker volume create --driver local \
 sudo -E docker run --rm -it \
   --name="oc_id" \
   --env="PATH=/bin" \
+  --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
+  --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
   --mount type=volume,src=oc_id_sup_state,dst=/hab/sup \
   --mount type=volume,src=oc_id_svc_state,dst=/hab/svc \
   --cap-drop="NET_BIND_SERVICE" \
@@ -166,6 +171,8 @@ sudo docker volume create --driver local \
 sudo -E docker run --rm -it \
   --name="bookshelf" \
   --env="PATH=/bin" \
+  --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
+  --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
   --mount type=volume,src=bookshelf_sup_state,dst=/hab/sup \
   --mount type=volume,src=bookshelf_svc_state,dst=/hab/svc \
   --cap-drop="NET_BIND_SERVICE" \
@@ -195,6 +202,8 @@ sudo docker volume create --driver local \
 sudo -E docker run --rm -it \
   --name="oc_bifrost" \
   --env="PATH=/bin" \
+  --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
+  --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
   --mount type=volume,src=oc_bifrost_sup_state,dst=/hab/sup \
   --mount type=volume,src=oc_bifrost_svc_state,dst=/hab/svc \
   --cap-drop="NET_BIND_SERVICE" \
@@ -234,6 +243,8 @@ keygen_start_size = 0
 keygen_timeout = 20000
 " \
   --env="PATH=/bin" \
+  --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
+  --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
   --mount type=volume,src=oc_erchef_sup_state,dst=/hab/sup \
   --mount type=volume,src=oc_erchef_svc_state,dst=/hab/svc \
   --cap-drop="NET_BIND_SERVICE" \
@@ -257,6 +268,8 @@ sudo docker volume create --driver local \
 sudo -E docker run --rm -it \
   --name="chef-server-nginx" \
   --env="PATH=/bin" \
+  --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
+  --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
   --mount type=volume,src=chef-server-nginx_sup_state,dst=/hab/sup \
   --volume ${DATA_MOUNT:-/mnt/hab}/nginx:/hab/svc \
   --cap-drop="NET_BIND_SERVICE" \
@@ -268,3 +281,4 @@ sudo -E docker run --rm -it \
   --detach=true \
   ${DOCKER_ORIGIN:-chefserverofficial}/chef-server-nginx:${VERSION:-latest} \
   --peer ${HOST_IP:-172.17.0.1} --bind oc_erchef:oc_erchef.default --bind oc_bifrost:oc_bifrost.default --bind oc_id:oc_id.default --bind bookshelf:bookshelf.default --bind elasticsearch:elasticsearch5.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9656 --listen-http 0.0.0.0:9666
+```
