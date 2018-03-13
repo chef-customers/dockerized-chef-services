@@ -5,23 +5,44 @@
 # ENTERPRISE - the name of the Automate enterprise to create
 # ADMIN_PASSWORD - the initial password to set for the 'admin' user in the Automate UI
 # AUTOMATE_TOKEN - the token for the Automate server data collector
+# DATA_MOUNT - the mount point for the data
+# USER_ID - the user ID to use
+# GROUP_ID - the group ID to use
+# LABEL_NAME - the name of the custom docker label to use
+# LABEL_VALUE - the value to assign to the custom docker label
 
 version: '2.1'
 services:
   postgresql:
-    image: ${HAB_ORIGIN:-chefserverofficial}/postgresql:${VERSION:-latest}
+    image: ${HAB_ORIGIN:-chefservernonroot}/postgresql:${VERSION:-latest}
     network_mode: host
+    restart: always
+    user: ${USER_ID:-42}:${GROUP_ID:-42}
+    cap_drop:
+    - NET_BIND_SERVICE
+    - SETUID
+    - SETGID
+    labels:
+      - "${LABEL_NAME:-com.ms.user-}=${LABEL_VALUE:-Chef}"
     environment:
       HAB_POSTGRESQL: |
         [superuser]
         name = 'hab'
         password = 'chefrocks'
     volumes:
-      - postgresql-data:/hab/svc/postgresql/data
+      - ${DATA_MOUNT:-/mnt/hab}/postgresql:/hab/svc/postgresql/data:Z
 
   rabbitmq:
-    image: ${HAB_ORIGIN:-chefserverofficial}/rabbitmq:${VERSION:-latest}
+    image: ${HAB_ORIGIN:-chefservernonroot}/rabbitmq:${VERSION:-latest}
     network_mode: host
+    restart: always
+    user: ${USER_ID:-42}:${GROUP_ID:-42}
+    cap_drop:
+    - NET_BIND_SERVICE
+    - SETUID
+    - SETGID
+    labels:
+      - "${LABEL_NAME:-com.ms.user-}=${LABEL_VALUE:-Chef}"
     command: --peer ${HOST_IP:-172.17.0.1}
       --listen-gossip 0.0.0.0:9650
       --listen-http 0.0.0.0:9660
@@ -36,22 +57,38 @@ services:
         [rabbitmq.management]
         enabled = true
     volumes:
-      - rabbitmq-data:/hab/svc/rabbitmq/data
+      - ${DATA_MOUNT:-/mnt/hab}/rabbitmq:/hab/svc/rabbitmq/data:Z
 
   elasticsearch:
-    image: ${HAB_ORIGIN:-chefserverofficial}/elasticsearch:${VERSION:-latest}
+    image: ${HAB_ORIGIN:-chefservernonroot}/elasticsearch:${VERSION:-latest}
     network_mode: host
+    restart: always
+    user: ${USER_ID:-42}:${GROUP_ID:-42}
+    cap_drop:
+    - NET_BIND_SERVICE
+    - SETUID
+    - SETGID
+    labels:
+      - "${LABEL_NAME:-com.ms.user-}=${LABEL_VALUE:-Chef}"
     command: --peer ${HOST_IP:-172.17.0.1}
       --listen-gossip 0.0.0.0:9651
       --listen-http 0.0.0.0:9661
     depends_on:
       - postgresql
     volumes:
-      - elasticsearch-data:/hab/svc/elasticsearch/data
+      - ${DATA_MOUNT:-/mnt/hab}/elasticsearch:/hab/svc/elasticsearch/data:Z
 
   logstash:
-    image: ${HAB_ORIGIN:-chefserverofficial}/logstash:${VERSION:-latest}
+    image: ${HAB_ORIGIN:-chefservernonroot}/logstash:${VERSION:-latest}
     network_mode: host
+    restart: always
+    user: ${USER_ID:-42}:${GROUP_ID:-42}
+    cap_drop:
+    - NET_BIND_SERVICE
+    - SETUID
+    - SETGID
+    labels:
+      - "${LABEL_NAME:-com.ms.user-}=${LABEL_VALUE:-Chef}"
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind elasticsearch:elasticsearch.default
       --bind rabbitmq:rabbitmq.default
@@ -61,8 +98,16 @@ services:
       - postgresql
 
   workflow-server:
-    image: ${HAB_ORIGIN:-chefserverofficial}/workflow-server:${VERSION:-latest}
+    image: ${HAB_ORIGIN:-chefservernonroot}/workflow-server:${VERSION:-latest}
     network_mode: host
+    restart: always
+    user: ${USER_ID:-42}:${GROUP_ID:-42}
+    cap_drop:
+    - NET_BIND_SERVICE
+    - SETUID
+    - SETGID
+    labels:
+      - "${LABEL_NAME:-com.ms.user-}=${LABEL_VALUE:-Chef}"
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind database:postgresql.default
       --bind elasticsearch:elasticsearch.default
@@ -79,12 +124,20 @@ services:
         [data_collector]
         token = "${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506}"
     volumes:
-      - maintenance:/var/opt/delivery/delivery/etc
-      - workflow-data:/hab/svc/workflow-server/data
+      - ${DATA_MOUNT:-/mnt/hab}/maintenance:/var/opt/delivery/delivery/etc:Z
+      - ${DATA_MOUNT:-/mnt/hab}/workflow:/hab/svc/workflow-server/data:Z
 
   notifications:
-    image: ${HAB_ORIGIN:-chefserverofficial}/notifications:${VERSION:-latest}
+    image: ${HAB_ORIGIN:-chefservernonroot}/notifications:${VERSION:-latest}
     network_mode: host
+    restart: always
+    user: ${USER_ID:-42}:${GROUP_ID:-42}
+    cap_drop:
+    - NET_BIND_SERVICE
+    - SETUID
+    - SETGID
+    labels:
+      - "${LABEL_NAME:-com.ms.user-}=${LABEL_VALUE:-Chef}"
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind elasticsearch:elasticsearch.default
       --bind rabbitmq:rabbitmq.default
@@ -94,8 +147,16 @@ services:
       - postgresql
 
   compliance:
-    image: ${HAB_ORIGIN:-chefserverofficial}/compliance:${VERSION:-latest}
+    image: ${HAB_ORIGIN:-chefservernonroot}/compliance:${VERSION:-latest}
     network_mode: host
+    restart: always
+    user: ${USER_ID:-42}:${GROUP_ID:-42}
+    cap_drop:
+    - NET_BIND_SERVICE
+    - SETUID
+    - SETGID
+    labels:
+      - "${LABEL_NAME:-com.ms.user-}=${LABEL_VALUE:-Chef}"
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind elasticsearch:elasticsearch.default
       --listen-gossip 0.0.0.0:9655
@@ -103,11 +164,19 @@ services:
     depends_on:
       - postgresql
     volumes:
-      - compliance-data:/hab/svc/compliance/data
+      - ${DATA_MOUNT:-/mnt/hab}/compliance:/hab/svc/compliance/data:Z
 
   automate-nginx:
-    image: ${HAB_ORIGIN:-chefserverofficial}/automate-nginx:${VERSION:-latest}
+    image: ${HAB_ORIGIN:-chefservernonroot}/automate-nginx:${VERSION:-latest}
     network_mode: host
+    restart: always
+    user: ${USER_ID:-42}:${GROUP_ID:-42}
+    cap_drop:
+    - NET_BIND_SERVICE
+    - SETUID
+    - SETGID
+    labels:
+      - "${LABEL_NAME:-com.ms.user-}=${LABEL_VALUE:-Chef}"
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind compliance:compliance.default
       --bind elasticsearch:elasticsearch.default
@@ -122,14 +191,5 @@ services:
         port = ${PILOT_HTTP_PORT:-8080}
         ssl_port = ${PILOT_HTTPS_PORT:-8443}
     volumes:
-      - maintenance:/var/opt/delivery/delivery/etc
-      - nginx-data:/hab/svc/automate-nginx/data
-
-volumes:
-  compliance-data:
-  elasticsearch-data:
-  maintenance:
-  nginx-data:
-  postgresql-data:
-  rabbitmq-data:
-  workflow-data:
+      - ${DATA_MOUNT:-/mnt/hab}/maintenance:/var/opt/delivery/delivery/etc
+      - ${DATA_MOUNT:-/mnt/hab}/nginx:/hab/svc/automate-nginx/data:Z

@@ -5,22 +5,44 @@
 # AUTOMATE_ENABLED - enable the Automate data collector (true or false)
 # AUTOMATE_SERVER - the IP address or hostname of the Automate server
 # AUTOMATE_TOKEN - the token for the Automate server data collector
+# DATA_MOUNT - the mount point for the data
+# USER_ID - the user ID to use
+# GROUP_ID - the group ID to use
+# LABEL_NAME - the name of the custom docker label to use
+# LABEL_VALUE - the value to assign to the custom docker label
+
 version: '2.1'
 services:
   postgresql:
-    image: ${HAB_ORIGIN:-chefserverofficial}/postgresql
+    image: ${HAB_ORIGIN:-chefservernonroot}/postgresql
     network_mode: host
+    restart: always
+    user: ${USER_ID:-42}:${GROUP_ID:-42}
+    cap_drop:
+    - NET_BIND_SERVICE
+    - SETUID
+    - SETGID
+    labels:
+      - "${LABEL_NAME:-com.ms.user-}=${LABEL_VALUE:-Chef}"
     environment:
       HAB_POSTGRESQL: |
         [superuser]
         name = 'hab'
         password = 'chefrocks'
     volumes:
-      - postgresql-data:/hab/svc/postgresql/data
+      - ${DATA_MOUNT:-/mnt/hab}/postgresql:/hab/svc/postgresql/data:Z
 
   chef-server-ctl:
-    image: ${HAB_ORIGIN:-chefserverofficial}/chef-server-ctl
+    image: ${HAB_ORIGIN:-chefservernonroot}/chef-server-ctl
     network_mode: host
+    restart: always
+    user: ${USER_ID:-42}:${GROUP_ID:-42}
+    cap_drop:
+    - NET_BIND_SERVICE
+    - SETUID
+    - SETGID
+    labels:
+      - "${LABEL_NAME:-com.ms.user-}=${LABEL_VALUE:-Chef}"
     command: --peer ${HOST_IP:-172.17.0.1}
       --listen-gossip 0.0.0.0:9650
       --listen-http 0.0.0.0:9660
@@ -32,8 +54,16 @@ services:
         token = "${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506}"
 
   elasticsearch:
-    image: ${HAB_ORIGIN:-chefserverofficial}/elasticsearch
+    image: ${HAB_ORIGIN:-chefservernonroot}/elasticsearch
     network_mode: host
+    restart: always
+    user: ${USER_ID:-42}:${GROUP_ID:-42}
+    cap_drop:
+    - NET_BIND_SERVICE
+    - SETUID
+    - SETGID
+    labels:
+      - "${LABEL_NAME:-com.ms.user-}=${LABEL_VALUE:-Chef}"
     command: --peer ${HOST_IP:-172.17.0.1}
       --listen-gossip 0.0.0.0:9651
       --listen-http 0.0.0.0:9661
@@ -42,11 +72,19 @@ services:
         soft: 65536
         hard: 65536
     volumes:
-      - elasticsearch-data:/hab/svc/elasticsearch/data
+      - ${DATA_MOUNT:-/mnt/hab}/elasticsearch:/hab/svc/elasticsearch/data:Z
 
   oc_id:
-    image: ${HAB_ORIGIN:-chefserverofficial}/oc_id
+    image: ${HAB_ORIGIN:-chefservernonroot}/oc_id
     network_mode: host
+    restart: always
+    user: ${USER_ID:-42}:${GROUP_ID:-42}
+    cap_drop:
+    - NET_BIND_SERVICE
+    - SETUID
+    - SETGID
+    labels:
+      - "${LABEL_NAME:-com.ms.user-}=${LABEL_VALUE:-Chef}"
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind database:postgresql.default
       --bind chef-server-ctl:chef-server-ctl.default
@@ -54,8 +92,16 @@ services:
       --listen-http 0.0.0.0:9662
 
   bookshelf:
-    image: ${HAB_ORIGIN:-chefserverofficial}/bookshelf
+    image: ${HAB_ORIGIN:-chefservernonroot}/bookshelf
     network_mode: host
+    restart: always
+    user: ${USER_ID:-42}:${GROUP_ID:-42}
+    cap_drop:
+    - NET_BIND_SERVICE
+    - SETUID
+    - SETGID
+    labels:
+      - "${LABEL_NAME:-com.ms.user-}=${LABEL_VALUE:-Chef}"
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind database:postgresql.default
       --bind chef-server-ctl:chef-server-ctl.default
@@ -63,8 +109,16 @@ services:
       --listen-http 0.0.0.0:9663
 
   oc_bifrost:
-    image: ${HAB_ORIGIN:-chefserverofficial}/oc_bifrost
+    image: ${HAB_ORIGIN:-chefservernonroot}/oc_bifrost
     network_mode: host
+    restart: always
+    user: ${USER_ID:-42}:${GROUP_ID:-42}
+    cap_drop:
+    - NET_BIND_SERVICE
+    - SETUID
+    - SETGID
+    labels:
+      - "${LABEL_NAME:-com.ms.user-}=${LABEL_VALUE:-Chef}"
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind database:postgresql.default
       --bind chef-server-ctl:chef-server-ctl.default
@@ -72,10 +126,16 @@ services:
       --listen-http 0.0.0.0:9664
 
   oc_erchef:
-    image: ${HAB_ORIGIN:-chefserverofficial}/oc_erchef
+    image: ${HAB_ORIGIN:-chefservernonroot}/oc_erchef
     network_mode: host
-    volumes:
-      - erchef-data:/hab/svc/oc_erchef/data
+    restart: always
+    user: ${USER_ID:-42}:${GROUP_ID:-42}
+    cap_drop:
+    - NET_BIND_SERVICE
+    - SETUID
+    - SETGID
+    labels:
+      - "${LABEL_NAME:-com.ms.user-}=${LABEL_VALUE:-Chef}"
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind bookshelf:bookshelf.default
       --bind oc_bifrost:oc_bifrost.default
@@ -86,16 +146,27 @@ services:
       --listen-http 0.0.0.0:9665
     environment:
       HAB_OC_ERCHEF: |
+        [chef_authn]
+        keygen_cache_workers=2
+        keygen_cache_size=10
+        keygen_start_size=0
+        keygen_timeout=20000
         [data_collector]
         enabled = ${AUTOMATE_ENABLED:-false}
         server = "${AUTOMATE_SERVER:-localhost}"
         port = 443
 
   chef-server-nginx:
-    image: ${HAB_ORIGIN:-chefserverofficial}/chef-server-nginx
+    image: ${HAB_ORIGIN:-chefservernonroot}/chef-server-nginx
     network_mode: host
-    volumes:
-      - nginx-data:/hab/svc/chef-server-nginx/data
+    restart: always
+    user: ${USER_ID:-42}:${GROUP_ID:-42}
+    cap_drop:
+    - NET_BIND_SERVICE
+    - SETUID
+    - SETGID
+    labels:
+      - "${LABEL_NAME:-com.ms.user-}=${LABEL_VALUE:-Chef}"
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind oc_erchef:oc_erchef.default
       --bind oc_bifrost:oc_bifrost.default
@@ -105,9 +176,5 @@ services:
       --bind chef-server-ctl:chef-server-ctl.default
       --listen-gossip 0.0.0.0:9656
       --listen-http 0.0.0.0:9666
-
-volumes:
-  postgresql-data:
-  elasticsearch-data:
-  erchef-data:
-  nginx-data:
+    volumes:
+      - ${DATA_MOUNT:-/mnt/hab}/nginx:/hab/svc/chef-server-nginx/data:Z

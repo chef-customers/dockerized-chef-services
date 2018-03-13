@@ -18,7 +18,6 @@ variable "tag_dept" { }
 variable "tag_contact" { }
 
 # docker variables
-variable "docker_compose_path" { default = "/usr/bin/docker-compose" }
 variable "enterprise_name" { default = "dockerize" }
 variable "admin_password" { default = "SuperSecurePassword" }
 variable "automate_token" { default = "93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506" } # must be 32 characters
@@ -68,19 +67,42 @@ resource "aws_instance" "automate_server" {
   }
 
   provisioner "file" {
-    source      = "automate.yml"
-    destination = "/home/${var.aws_ami_user}/docker-compose.yml"
+    source      = "docker-run-automate.sh"
+    destination = "/home/${var.aws_ami_user}/docker-run-automate.sh"
+  }
+
+  provisioner "file" {
+    source      = "passwd"
+    destination = "/home/${var.aws_ami_user}/passwd"
+  }
+
+  provisioner "file" {
+    source      = "group"
+    destination = "/home/${var.aws_ami_user}/group"
   }
 
   provisioner "remote-exec" {
     inline = [
+      "sudo yum update -y docker-ce",
+      "sudo service docker start",
       "sudo iptables -A PREROUTING -t nat -p tcp --dport 80 -j REDIRECT --to-port 8080",
       "sudo iptables -A PREROUTING -t nat -p tcp --dport 443 -j REDIRECT --to-port 8443",
+      "export USER_ID=9999",
+      "export GROUP_ID=8888",
+      "sudo groupadd -g 8888 chef-dev-ux",
+      "sudo adduser -u 9999 -g 8888 -m chef-dev-ux",
+      "sudo usermod -a -G docker ${var.aws_ami_user}",
+      "sudo usermod -a -G docker chef-dev-ux",
+      "export DATA_MOUNT=/home/chef-dev-ux/data",
+      "for dir in postgresql rabbitmq elasticsearch maintenance workflow compliance nginx; do sudo mkdir -p $DATA_MOUNT/$dir; done",
       "export ENTERPRISE=${var.enterprise_name}",
       "export ADMIN_PASSWORD=${var.admin_password}",
       "export AUTOMATE_TOKEN=${var.automate_token}",
-      "sleep 10",
-      "sudo -E ${var.docker_compose_path} --no-ansi up -d"
+      "sudo cp /home/${var.aws_ami_user}/passwd $DATA_MOUNT",
+      "sudo cp /home/${var.aws_ami_user}/group $DATA_MOUNT",
+      "sudo chown -R chef-dev-ux:nobody $DATA_MOUNT",
+      "sudo chmod a+x /home/${var.aws_ami_user}/docker-run-automate.sh",
+      "sudo -E /home/${var.aws_ami_user}/docker-run-automate.sh"
     ]
   }
 }
@@ -112,21 +134,46 @@ resource "aws_instance" "chef_server" {
   }
 
   provisioner "file" {
-    source      = "chef-server.yml"
-    destination = "/home/${var.aws_ami_user}/docker-compose.yml"
+    source      = "docker-run-chef-server.sh"
+    destination = "/home/${var.aws_ami_user}/docker-run-chef-server.sh"
+  }
+
+  provisioner "file" {
+    source      = "passwd"
+    destination = "/home/${var.aws_ami_user}/passwd"
+  }
+
+  provisioner "file" {
+    source      = "group"
+    destination = "/home/${var.aws_ami_user}/group"
   }
 
   provisioner "remote-exec" {
     inline = [
+      "sudo yum update -y docker-ce",
+      "sudo service docker start",
       "sudo iptables -A PREROUTING -t nat -p tcp --dport 80 -j REDIRECT --to-port 8080",
       "sudo iptables -A PREROUTING -t nat -p tcp --dport 443 -j REDIRECT --to-port 8443",
       "sudo iptables -t nat -A OUTPUT -o lo -p tcp --dport 80 -j REDIRECT --to-port 8080",
       "sudo iptables -t nat -A OUTPUT -o lo -p tcp --dport 443 -j REDIRECT --to-port 8443",
+      "export USER_ID=9999",
+      "export GROUP_ID=8888",
+      "sudo groupadd -g 8888 chef-dev-ux",
+      "sudo adduser -u 9999 -g 8888 -m chef-dev-ux",
+      "sudo usermod -a -G docker ${var.aws_ami_user}",
+      "sudo usermod -a -G docker chef-dev-ux",
+      "export DATA_MOUNT=/home/chef-dev-ux/data",
+      "for dir in postgresql elasticsearch nginx; do sudo mkdir -p $DATA_MOUNT/$dir; done",
       "export AUTOMATE_ENABLED=true",
+      "export ENTERPRISE=${var.enterprise_name}",
       "export AUTOMATE_SERVER=${aws_instance.automate_server.private_ip}",
+      "export ADMIN_PASSWORD=${var.admin_password}",
       "export AUTOMATE_TOKEN=${var.automate_token}",
-      "sleep 10",
-      "sudo -E ${var.docker_compose_path} --no-ansi up -d"
+      "sudo cp /home/${var.aws_ami_user}/passwd $DATA_MOUNT",
+      "sudo cp /home/${var.aws_ami_user}/group $DATA_MOUNT",
+      "sudo chown -R chef-dev-ux:nobody $DATA_MOUNT",
+      "sudo chmod a+x /home/${var.aws_ami_user}/docker-run-chef-server.sh",
+      "sudo -E /home/${var.aws_ami_user}/docker-run-chef-server.sh"
     ]
   }
 }
