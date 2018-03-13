@@ -63,6 +63,8 @@ ssl_port = "8443"
 token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506}\"
 " \
   --env="PATH=/bin" \
+  --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
+  --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
   --mount type=volume,src=chef-server-ctl_sup_state,dst=/hab/sup \
   --mount type=volume,src=chef-server-ctl_svc_state,dst=/hab/svc \
   --cap-drop="NET_BIND_SERVICE" \
@@ -86,6 +88,8 @@ sudo docker volume create --driver local \
 sudo -E docker run --rm -it \
   --name="elasticsearch" \
   --env="PATH=/bin" \
+  --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
+  --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
   --mount type=volume,src=elasticsearch_sup_state,dst=/hab/sup \
   --volume ${DATA_MOUNT:-/mnt/hab}/elasticsearch:/hab/svc \
   --cap-drop="NET_BIND_SERVICE" \
@@ -116,6 +120,8 @@ sudo docker volume create --driver local \
 sudo -E docker run --rm -it \
   --name="oc_id" \
   --env="PATH=/bin" \
+  --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
+  --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
   --mount type=volume,src=oc_id_sup_state,dst=/hab/sup \
   --mount type=volume,src=oc_id_svc_state,dst=/hab/svc \
   --cap-drop="NET_BIND_SERVICE" \
@@ -145,6 +151,8 @@ sudo docker volume create --driver local \
 sudo -E docker run --rm -it \
   --name="bookshelf" \
   --env="PATH=/bin" \
+  --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
+  --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
   --mount type=volume,src=bookshelf_sup_state,dst=/hab/sup \
   --mount type=volume,src=bookshelf_svc_state,dst=/hab/svc \
   --cap-drop="NET_BIND_SERVICE" \
@@ -174,6 +182,8 @@ sudo docker volume create --driver local \
 sudo -E docker run --rm -it \
   --name="oc_bifrost" \
   --env="PATH=/bin" \
+  --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
+  --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
   --mount type=volume,src=oc_bifrost_sup_state,dst=/hab/sup \
   --mount type=volume,src=oc_bifrost_svc_state,dst=/hab/svc \
   --cap-drop="NET_BIND_SERVICE" \
@@ -213,6 +223,8 @@ keygen_start_size = 0
 keygen_timeout = 20000
 " \
   --env="PATH=/bin" \
+  --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
+  --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
   --mount type=volume,src=oc_erchef_sup_state,dst=/hab/sup \
   --mount type=volume,src=oc_erchef_svc_state,dst=/hab/svc \
   --cap-drop="NET_BIND_SERVICE" \
@@ -236,6 +248,8 @@ sudo docker volume create --driver local \
 sudo -E docker run --rm -it \
   --name="chef-server-nginx" \
   --env="PATH=/bin" \
+  --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
+  --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
   --mount type=volume,src=chef-server-nginx_sup_state,dst=/hab/sup \
   --volume ${DATA_MOUNT:-/mnt/hab}/nginx:/hab/svc \
   --cap-drop="NET_BIND_SERVICE" \
