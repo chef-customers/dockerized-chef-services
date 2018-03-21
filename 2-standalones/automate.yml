@@ -9,7 +9,7 @@
 version: '2.1'
 services:
   postgresql:
-    image: ${HAB_ORIGIN:-chefserverofficial}/postgresql:${VERSION:-latest}
+    image: ${HAB_ORIGIN:-chefdemo}/postgresql:${VERSION:-current}
     network_mode: host
     environment:
       HAB_POSTGRESQL: |
@@ -20,7 +20,7 @@ services:
       - postgresql-data:/hab/svc/postgresql/data
 
   rabbitmq:
-    image: ${HAB_ORIGIN:-chefserverofficial}/rabbitmq:${VERSION:-latest}
+    image: ${HAB_ORIGIN:-chefdemo}/rabbitmq:${VERSION:-current}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --listen-gossip 0.0.0.0:9650
@@ -39,7 +39,7 @@ services:
       - rabbitmq-data:/hab/svc/rabbitmq/data
 
   elasticsearch:
-    image: ${HAB_ORIGIN:-chefserverofficial}/elasticsearch:${VERSION:-latest}
+    image: ${HAB_ORIGIN:-chefserverofficial}/elasticsearch5:${VERSION:-latest}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --listen-gossip 0.0.0.0:9651
@@ -50,10 +50,10 @@ services:
       - elasticsearch-data:/hab/svc/elasticsearch/data
 
   logstash:
-    image: ${HAB_ORIGIN:-chefserverofficial}/logstash:${VERSION:-latest}
+    image: ${HAB_ORIGIN:-chefdemo}/logstash:${VERSION:-current}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
-      --bind elasticsearch:elasticsearch.default
+      --bind elasticsearch:elasticsearch5.default
       --bind rabbitmq:rabbitmq.default
       --listen-gossip 0.0.0.0:9652
       --listen-http 0.0.0.0:9662
@@ -61,11 +61,11 @@ services:
       - postgresql
 
   workflow-server:
-    image: ${HAB_ORIGIN:-chefserverofficial}/workflow-server:${VERSION:-latest}
+    image: ${HAB_ORIGIN:-chefdemo}/workflow-server:${VERSION:-current}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind database:postgresql.default
-      --bind elasticsearch:elasticsearch.default
+      --bind elasticsearch:elasticsearch5.default
       --bind rabbitmq:rabbitmq.default
       --listen-gossip 0.0.0.0:9653
       --listen-http 0.0.0.0:9663
@@ -78,15 +78,17 @@ services:
 
         [data_collector]
         token = "${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506}"
+        [mlsa]
+        accept = true
     volumes:
       - maintenance:/var/opt/delivery/delivery/etc
       - workflow-data:/hab/svc/workflow-server/data
 
   notifications:
-    image: ${HAB_ORIGIN:-chefserverofficial}/notifications:${VERSION:-latest}
+    image: ${HAB_ORIGIN:-chefdemo}/notifications:${VERSION:-current}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
-      --bind elasticsearch:elasticsearch.default
+      --bind elasticsearch:elasticsearch5.default
       --bind rabbitmq:rabbitmq.default
       --listen-gossip 0.0.0.0:9654
       --listen-http 0.0.0.0:9664
@@ -94,10 +96,11 @@ services:
       - postgresql
 
   compliance:
-    image: ${HAB_ORIGIN:-chefserverofficial}/compliance:${VERSION:-latest}
+    image: ${HAB_ORIGIN:-chefdemo}/compliance:${VERSION:-current}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
-      --bind elasticsearch:elasticsearch.default
+      --bind elasticsearch:elasticsearch5.default
+      --bind postgresql:postgresql.default
       --listen-gossip 0.0.0.0:9655
       --listen-http 0.0.0.0:9665
     depends_on:
@@ -106,11 +109,11 @@ services:
       - compliance-data:/hab/svc/compliance/data
 
   automate-nginx:
-    image: ${HAB_ORIGIN:-chefserverofficial}/automate-nginx:${VERSION:-latest}
+    image: ${HAB_ORIGIN:-chefdemo}/automate-nginx:${VERSION:-current}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind compliance:compliance.default
-      --bind elasticsearch:elasticsearch.default
+      --bind elasticsearch:elasticsearch5.default
       --bind workflow:workflow-server.default
       --bind notifications:notifications.default
       --listen-gossip 0.0.0.0:9656
@@ -121,6 +124,8 @@ services:
       HAB_AUTOMATE_NGINX: |
         port = ${PILOT_HTTP_PORT:-8080}
         ssl_port = ${PILOT_HTTPS_PORT:-8443}
+        [mlsa]
+        accept = true
     volumes:
       - maintenance:/var/opt/delivery/delivery/etc
       - nginx-data:/hab/svc/automate-nginx/data
