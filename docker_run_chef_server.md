@@ -41,7 +41,17 @@ for svc in postgresql chef-server-ctl elasticsearch oc_id bookshelf oc_bifrost o
   echo "Ensuring $svc directories exist ($dirs)"
   sudo mkdir -p $dirs
   sudo chown -R $USER_ID:$GROUP_ID $dirs
+
+  # NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+  # if it exists, you'll need to account for its removal in order to start the services
+
+  lockfile="${DATA_MOUNT:-/mnt/hab}/${svc}_sup/default/LOCK"
+  if [ -f $lockfile ]; then
+    echo "Removing existing lockfile $lockfile"
+    rm -f $lockfile
+  fi
 done
+
 
 # postgresql
 
