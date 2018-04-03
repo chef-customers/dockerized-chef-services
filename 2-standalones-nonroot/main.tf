@@ -71,7 +71,7 @@ resource "aws_instance" "automate_server" {
 
   provisioner "file" {
     source      = "automate.yml"
-    destination = "/home/ec2-user/docker-compose.yml"
+    destination = "/home/${var.aws_ami_user}/docker-compose.yml"
   }
 
   provisioner "remote-exec" {
@@ -121,7 +121,7 @@ resource "aws_instance" "chef_server" {
 
   provisioner "file" {
     source      = "chef-server.yml"
-    destination = "/home/ec2-user/docker-compose.yml"
+    destination = "/home/${var.aws_ami_user}/docker-compose.yml"
   }
 
   provisioner "remote-exec" {
