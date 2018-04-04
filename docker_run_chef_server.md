@@ -37,6 +37,11 @@ if [ -f "env.sh" ]; then
 fi
 
 for svc in postgresql chef-server-ctl elasticsearch oc_id bookshelf oc_bifrost oc_erchef chef-server-nginx; do
+  # NOTE: If launching all the services at once from a down state, then clearing out `/hab/sup` ensures
+  # a clean slate so that the ring can be established. This guarantees ring recovery when things go sideways..
+  # Do not do this for (re-)starting individual services as it will lead to exclusion of the service from the ring.
+  sudo rm -rf "${DATA_MOUNT:-/mnt/hab}/${svc}_sup"
+
   dirs="${DATA_MOUNT:-/mnt/hab}/${svc}_svc ${DATA_MOUNT:-/mnt/hab}/${svc}_sup"
   echo "Ensuring $svc directories exist ($dirs)"
   sudo mkdir -p $dirs
