@@ -24,6 +24,6 @@ input:x:24:
 mail:x:34:
 nogroup:x:99:
 users:x:999:
-hab:x:42:hab
+hab:x:42:hab:
 testuser:x:8888:
 ```

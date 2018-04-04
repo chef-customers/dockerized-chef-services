@@ -31,15 +31,24 @@ In addition, you must provide volumes for `/hab/sup` and `/hab/svc` as described
 # USER_ID - the user ID to use (numeric)
 # GROUP_ID - the group ID to use (numeric)
 
+if [ -f "env.sh" ]; then
+ echo "Setting ENVIRONMENT variables"
+ . ./env.sh
+fi
+
+for svc in postgresql chef-server-ctl elasticsearch oc_id bookshelf oc_bifrost oc_erchef chef-server-nginx; do
+  dirs="${DATA_MOUNT:-/mnt/hab}/${svc}_svc ${DATA_MOUNT:-/mnt/hab}/${svc}_sup"
+  echo "Ensuring $svc directories exist ($dirs)"
+  sudo mkdir -p $dirs
+  sudo chown -R $USER_ID:$GROUP_ID $dirs
+done
 
 # postgresql
 
-sudo docker volume create --driver local \
-       --opt type=tmpfs \
-       --opt device=tmpfs \
-       --opt o=size=100m,uid=$USER_ID \
-       postgresql_sup_state
-
+# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+# if it exists, you'll need to account for its removal in order to start the services
+echo "Removing any stale LOCK files for postgresql"
+sudo rm -f "${DATA_MOUNT:-/mnt/hab}/postgresql_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="postgresql" \
   --env="HAB_POSTGRESQL=[superuser]
@@ -49,31 +58,22 @@ password = 'chefrocks'
   --env="PATH=/bin" \
   --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
   --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
-  --mount type=volume,src=postgresql_sup_state,dst=/hab/sup \
-  --volume ${DATA_MOUNT:-/mnt/hab}/postgresql:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/postgresql_svc:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/postgresql_sup:/hab/sup \
   --cap-drop="NET_BIND_SERVICE" \
   --cap-drop="SETUID" \
   --cap-drop="SETGID" \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
-  --env="HAB_NON_ROOT=1" \
   --network=host \
   --detach=true \
   ${DOCKER_ORIGIN:-chefserverofficial}/postgresql:${VERSION:-latest}
 
 # chef-server-ctl
 
-sudo docker volume create --driver local \
-       --opt type=tmpfs \
-       --opt device=tmpfs \
-       --opt o=size=100m,uid=$USER_ID \
-       chef-server-ctl_sup_state
-
-sudo docker volume create --driver local \
-       --opt type=tmpfs \
-       --opt device=tmpfs \
-       --opt o=size=100m,uid=$USER_ID \
-       chef-server-ctl_svc_state
-
+# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+# if it exists, you'll need to account for its removal in order to start the services
+echo "Removing any stale LOCK files for chef-server-ctl"
+sudo rm -f "${DATA_MOUNT:-/mnt/hab}/chef-server-ctl_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="chef-server-ctl" \
   --env="HAB_CHEF_SERVER_CTL=[chef_server_api]
@@ -85,13 +85,12 @@ token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb
   --env="PATH=/bin" \
   --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
   --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
-  --mount type=volume,src=chef-server-ctl_sup_state,dst=/hab/sup \
-  --mount type=volume,src=chef-server-ctl_svc_state,dst=/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/chef-server-ctl_svc:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/chef-server-ctl_sup:/hab/sup \
   --cap-drop="NET_BIND_SERVICE" \
   --cap-drop="SETUID" \
   --cap-drop="SETGID" \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
-  --env="HAB_NON_ROOT=1" \
   --network=host \
   --detach=true \
   ${DOCKER_ORIGIN:-chefserverofficial}/chef-server-ctl:${VERSION:-latest} \
@@ -99,24 +98,21 @@ token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb
 
 # elasticsearch
 
-sudo docker volume create --driver local \
-       --opt type=tmpfs \
-       --opt device=tmpfs \
-       --opt o=size=100m,uid=$USER_ID \
-       elasticsearch_sup_state
-
+# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+# if it exists, you'll need to account for its removal in order to start the services
+echo "Removing any stale LOCK files for elasticsearch"
+sudo rm -f "${DATA_MOUNT:-/mnt/hab}/elasticsearch_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="elasticsearch" \
   --env="PATH=/bin" \
   --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
   --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
-  --mount type=volume,src=elasticsearch_sup_state,dst=/hab/sup \
-  --volume ${DATA_MOUNT:-/mnt/hab}/elasticsearch:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/elasticsearch_svc:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/elasticsearch_sup:/hab/sup \
   --cap-drop="NET_BIND_SERVICE" \
   --cap-drop="SETUID" \
   --cap-drop="SETGID" \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
-  --env="HAB_NON_ROOT=1" \
   --network=host \
   --ulimit nofile=65536:65536 \
   --detach=true \
@@ -125,30 +121,21 @@ sudo -E docker run --rm -it \
 
 # oc_id
 
-sudo docker volume create --driver local \
-       --opt type=tmpfs \
-       --opt device=tmpfs \
-       --opt o=size=100m,uid=$USER_ID \
-       oc_id_sup_state
-
-sudo docker volume create --driver local \
-       --opt type=tmpfs \
-       --opt device=tmpfs \
-       --opt o=size=100m,uid=$USER_ID \
-       oc_id_svc_state
-
+# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+# if it exists, you'll need to account for its removal in order to start the services
+echo "Removing any stale LOCK files for oc_id"
+sudo rm -f "${DATA_MOUNT:-/mnt/hab}/oc_id_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="oc_id" \
   --env="PATH=/bin" \
   --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
   --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
-  --mount type=volume,src=oc_id_sup_state,dst=/hab/sup \
-  --mount type=volume,src=oc_id_svc_state,dst=/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/oc_id_svc:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/oc_id_sup:/hab/sup \
   --cap-drop="NET_BIND_SERVICE" \
   --cap-drop="SETUID" \
   --cap-drop="SETGID" \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
-  --env="HAB_NON_ROOT=1" \
   --network=host \
   --detach=true \
   ${DOCKER_ORIGIN:-chefserverofficial}/oc_id:${VERSION:-latest} \
@@ -156,30 +143,21 @@ sudo -E docker run --rm -it \
 
 # bookshelf
 
-sudo docker volume create --driver local \
-       --opt type=tmpfs \
-       --opt device=tmpfs \
-       --opt o=size=100m,uid=$USER_ID \
-       bookshelf_sup_state
-
-sudo docker volume create --driver local \
-       --opt type=tmpfs \
-       --opt device=tmpfs \
-       --opt o=size=100m,uid=$USER_ID \
-       bookshelf_svc_state
-
+# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+# if it exists, you'll need to account for its removal in order to start the services
+echo "Removing any stale LOCK files for bookshelf"
+sudo rm -f "${DATA_MOUNT:-/mnt/hab}/bookshelf_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="bookshelf" \
   --env="PATH=/bin" \
   --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
   --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
-  --mount type=volume,src=bookshelf_sup_state,dst=/hab/sup \
-  --mount type=volume,src=bookshelf_svc_state,dst=/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/bookshelf_svc:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/bookshelf_sup:/hab/sup \
   --cap-drop="NET_BIND_SERVICE" \
   --cap-drop="SETUID" \
   --cap-drop="SETGID" \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
-  --env="HAB_NON_ROOT=1" \
   --network=host \
   --detach=true \
   ${DOCKER_ORIGIN:-chefserverofficial}/bookshelf:${VERSION:-latest} \
@@ -187,30 +165,21 @@ sudo -E docker run --rm -it \
 
 # oc_bifrost
 
-sudo docker volume create --driver local \
-       --opt type=tmpfs \
-       --opt device=tmpfs \
-       --opt o=size=100m,uid=$USER_ID \
-       oc_bifrost_sup_state
-
-sudo docker volume create --driver local \
-       --opt type=tmpfs \
-       --opt device=tmpfs \
-       --opt o=size=100m,uid=$USER_ID \
-       oc_bifrost_svc_state
-
+# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+# if it exists, you'll need to account for its removal in order to start the services
+echo "Removing any stale LOCK files for oc_bifrost"
+sudo rm -f "${DATA_MOUNT:-/mnt/hab}/oc_bifrost_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="oc_bifrost" \
   --env="PATH=/bin" \
   --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
   --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
-  --mount type=volume,src=oc_bifrost_sup_state,dst=/hab/sup \
-  --mount type=volume,src=oc_bifrost_svc_state,dst=/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/oc_bifrost_svc:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/oc_bifrost_sup:/hab/sup \
   --cap-drop="NET_BIND_SERVICE" \
   --cap-drop="SETUID" \
   --cap-drop="SETGID" \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
-  --env="HAB_NON_ROOT=1" \
   --network=host \
   --detach=true \
   ${DOCKER_ORIGIN:-chefserverofficial}/oc_bifrost:${VERSION:-latest} \
@@ -218,18 +187,10 @@ sudo -E docker run --rm -it \
 
 # oc_erchef
 
-sudo docker volume create --driver local \
-       --opt type=tmpfs \
-       --opt device=tmpfs \
-       --opt o=size=100m,uid=$USER_ID \
-       oc_erchef_sup_state
-
-sudo docker volume create --driver local \
-       --opt type=tmpfs \
-       --opt device=tmpfs \
-       --opt o=size=100m,uid=$USER_ID \
-       oc_erchef_svc_state
-
+# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+# if it exists, you'll need to account for its removal in order to start the services
+echo "Removing any stale LOCK files for oc_erchef"
+sudo rm -f "${DATA_MOUNT:-/mnt/hab}/oc_erchef_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="oc_erchef" \
   --env="HAB_OC_ERCHEF=[data_collector]
@@ -245,13 +206,12 @@ keygen_timeout = 20000
   --env="PATH=/bin" \
   --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
   --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
-  --mount type=volume,src=oc_erchef_sup_state,dst=/hab/sup \
-  --mount type=volume,src=oc_erchef_svc_state,dst=/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/oc_erchef_svc:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/oc_erchef_sup:/hab/sup \
   --cap-drop="NET_BIND_SERVICE" \
   --cap-drop="SETUID" \
   --cap-drop="SETGID" \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
-  --env="HAB_NON_ROOT=1" \
   --network=host \
   --detach=true \
   ${DOCKER_ORIGIN:-chefserverofficial}/oc_erchef:${VERSION:-latest} \
@@ -259,24 +219,21 @@ keygen_timeout = 20000
 
 # chef-server-nginx
 
-sudo docker volume create --driver local \
-       --opt type=tmpfs \
-       --opt device=tmpfs \
-       --opt o=size=100m,uid=$USER_ID \
-       chef-server-nginx_sup_state
-
+# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+# if it exists, you'll need to account for its removal in order to start the services
+echo "Removing any stale LOCK files for chef-server-nginx"
+sudo rm -f "${DATA_MOUNT:-/mnt/hab}/chef-server-nginx_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="chef-server-nginx" \
   --env="PATH=/bin" \
   --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
   --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
-  --mount type=volume,src=chef-server-nginx_sup_state,dst=/hab/sup \
-  --volume ${DATA_MOUNT:-/mnt/hab}/nginx:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/chef-server-nginx_svc:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/chef-server-nginx_sup:/hab/sup \
   --cap-drop="NET_BIND_SERVICE" \
   --cap-drop="SETUID" \
   --cap-drop="SETGID" \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
-  --env="HAB_NON_ROOT=1" \
   --network=host \
   --detach=true \
   ${DOCKER_ORIGIN:-chefserverofficial}/chef-server-nginx:${VERSION:-latest} \
