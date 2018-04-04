@@ -22,10 +22,11 @@ In addition, you must provide volumes for `/hab/sup` and `/hab/svc` as described
 
 
 ```shell
+#!/bin/bash
 
 # Configurable shell environment variables:
 # DOCKER_ORIGIN - denotes the docker origin (dockerhub ID) or default to `chefserverofficial`
-# VERSION -  the version identifier tag on the packages
+# VERSION - the version identifier tag on the packages
 # HOST_IP - the IP address of the docker host. 172.17.0.1 is commonly the docker0 interface which is fine
 # ENTERPRISE - the name of the Automate enterprise to create
 # ADMIN_PASSWORD - the initial password to set for the 'admin' user in the Automate UI
@@ -34,17 +35,25 @@ In addition, you must provide volumes for `/hab/sup` and `/hab/svc` as described
 # GROUP_ID - the group ID to use
 # DATA_MOUNT - the mount point for the data
 
-# Docker Services
-#
+
+if [ -f "env.sh" ]; then
+ echo "Setting ENVIRONMENT variables"
+ . ./env.sh
+fi
+
+for svc in postgresql rabbitmq elasticsearch logstash workflow-server notifications compliance automate-nginx maintenance; do
+  dirs="${DATA_MOUNT:-/mnt/hab}/${svc}_svc ${DATA_MOUNT:-/mnt/hab}/${svc}_sup"
+  echo "Ensuring $svc directories exist ($dirs)"
+  sudo mkdir -p $dirs
+  sudo chown -R $USER_ID:$GROUP_ID $dirs
+done
 
 # postgresql
 
-sudo docker volume create --driver local \
-       --opt type=tmpfs \
-       --opt device=tmpfs \
-       --opt o=size=100m,uid=$USER_ID \
-       postgresql_sup_state
-
+# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+# if it exists, you'll need to account for its removal in order to start the services
+echo "Removing any stale LOCK files for postgresql"
+sudo rm -f "${DATA_MOUNT:-/mnt/hab}/postgresql_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="postgresql" \
   --env="HAB_POSTGRESQL=[superuser]
@@ -54,25 +63,22 @@ password = 'chefrocks'
   --env="PATH=/bin" \
   --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
   --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
-  --mount type=volume,src=postgresql_sup_state,dst=/hab/sup \
-  --volume ${DATA_MOUNT:-/mnt/hab}/postgresql:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/postgresql_svc:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/postgresql_sup:/hab/sup \
   --cap-drop="NET_BIND_SERVICE" \
   --cap-drop="SETUID" \
   --cap-drop="SETGID" \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
-  --env="HAB_NON_ROOT=1" \
   --network=host \
   --detach=true \
-  ${DOCKER_ORIGIN:-chefserverofficial}/postgresql:${VERSION:-latest} \
+  ${DOCKER_ORIGIN:-chefserverofficial}/postgresql:${VERSION:-latest}
 
 # rabbitmq
 
-sudo docker volume create --driver local \
-       --opt type=tmpfs \
-       --opt device=tmpfs \
-       --opt o=size=100m,uid=$USER_ID \
-       rabbitmq_sup_state
-
+# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+# if it exists, you'll need to account for its removal in order to start the services
+echo "Removing any stale LOCK files for rabbitmq"
+sudo rm -f "${DATA_MOUNT:-/mnt/hab}/rabbitmq_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="rabbitmq" \
   --env="HAB_RABBITMQ=[rabbitmq]
@@ -85,13 +91,12 @@ enabled = true
   --env="PATH=/bin" \
   --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
   --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
-  --mount type=volume,src=rabbitmq_sup_state,dst=/hab/sup \
-  --volume ${DATA_MOUNT:-/mnt/hab}/rabbitmq:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/rabbitmq_svc:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/rabbitmq_sup:/hab/sup \
   --cap-drop="NET_BIND_SERVICE" \
   --cap-drop="SETUID" \
   --cap-drop="SETGID" \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
-  --env="HAB_NON_ROOT=1" \
   --network=host \
   --detach=true \
   ${DOCKER_ORIGIN:-chefserverofficial}/rabbitmq:${VERSION:-latest} \
@@ -99,24 +104,21 @@ enabled = true
 
 # elasticsearch
 
-sudo docker volume create --driver local \
-       --opt type=tmpfs \
-       --opt device=tmpfs \
-       --opt o=size=100m,uid=$USER_ID \
-       elasticsearch_sup_state
-
+# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+# if it exists, you'll need to account for its removal in order to start the services
+echo "Removing any stale LOCK files for elasticsearch"
+sudo rm -f "${DATA_MOUNT:-/mnt/hab}/elasticsearch_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="elasticsearch" \
   --env="PATH=/bin" \
   --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
   --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
-  --mount type=volume,src=elasticsearch_sup_state,dst=/hab/sup \
-  --volume ${DATA_MOUNT:-/mnt/hab}/elasticsearch:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/elasticsearch_svc:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/elasticsearch_sup:/hab/sup \
   --cap-drop="NET_BIND_SERVICE" \
   --cap-drop="SETUID" \
   --cap-drop="SETGID" \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
-  --env="HAB_NON_ROOT=1" \
   --network=host \
   --ulimit nofile=65536:65536 \
   --detach=true \
@@ -125,30 +127,21 @@ sudo -E docker run --rm -it \
 
 # logstash
 
-sudo docker volume create --driver local \
-       --opt type=tmpfs \
-       --opt device=tmpfs \
-       --opt o=size=100m,uid=$USER_ID \
-       logstash_sup_state
-
-sudo docker volume create --driver local \
-       --opt type=tmpfs \
-       --opt device=tmpfs \
-       --opt o=size=100m,uid=$USER_ID \
-       logstash_svc_state
-
+# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+# if it exists, you'll need to account for its removal in order to start the services
+echo "Removing any stale LOCK files for logstash"
+sudo rm -f "${DATA_MOUNT:-/mnt/hab}/logstash_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="logstash" \
   --env="PATH=/bin" \
   --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
   --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
-  --mount type=volume,src=logstash_sup_state,dst=/hab/sup \
-  --mount type=volume,src=logstash_svc_state,dst=/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/logstash_svc:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/logstash_sup:/hab/sup \
   --cap-drop="NET_BIND_SERVICE" \
   --cap-drop="SETUID" \
   --cap-drop="SETGID" \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
-  --env="HAB_NON_ROOT=1" \
   --network=host \
   --detach=true \
   ${DOCKER_ORIGIN:-chefserverofficial}/logstash:${VERSION:-latest} \
@@ -156,12 +149,10 @@ sudo -E docker run --rm -it \
 
 # workflow-server
 
-sudo docker volume create --driver local \
-       --opt type=tmpfs \
-       --opt device=tmpfs \
-       --opt o=size=100m,uid=$USER_ID \
-       workflow-server_sup_state
-
+# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+# if it exists, you'll need to account for its removal in order to start the services
+echo "Removing any stale LOCK files for workflow-server"
+sudo rm -f "${DATA_MOUNT:-/mnt/hab}/workflow-server_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="workflow-server" \
   --env="HAB_WORKFLOW_SERVER=
@@ -173,14 +164,13 @@ token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb
   --env="PATH=/bin" \
   --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
   --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
-  --mount type=volume,src=workflow-server_sup_state,dst=/hab/sup \
-  --volume ${DATA_MOUNT:-/mnt/hab}/workflow:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/workflow-server_svc:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/workflow-server_sup:/hab/sup \
   --volume ${DATA_MOUNT:-/mnt/hab}/maintenance:/var/opt/delivery/delivery/etc \
   --cap-drop="NET_BIND_SERVICE" \
   --cap-drop="SETUID" \
   --cap-drop="SETGID" \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
-  --env="HAB_NON_ROOT=1" \
   --network=host \
   --detach=true \
   ${DOCKER_ORIGIN:-chefserverofficial}/workflow-server:${VERSION:-latest} \
@@ -188,30 +178,21 @@ token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb
 
 # notifications
 
-sudo docker volume create --driver local \
-       --opt type=tmpfs \
-       --opt device=tmpfs \
-       --opt o=size=100m,uid=$USER_ID \
-       notifications_sup_state
-
-sudo docker volume create --driver local \
-       --opt type=tmpfs \
-       --opt device=tmpfs \
-       --opt o=size=100m,uid=$USER_ID \
-       notifications_svc_state
-
+# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+# if it exists, you'll need to account for its removal in order to start the services
+echo "Removing any stale LOCK files for workflow-server"
+sudo rm -f "${DATA_MOUNT:-/mnt/hab}/workflow-server_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="notifications" \
   --env="PATH=/bin" \
   --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
   --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
-  --mount type=volume,src=notifications_sup_state,dst=/hab/sup \
-  --mount type=volume,src=notifications_svc_state,dst=/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/notifications_svc:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/notifications_sup:/hab/sup \
   --cap-drop="NET_BIND_SERVICE" \
   --cap-drop="SETUID" \
   --cap-drop="SETGID" \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
-  --env="HAB_NON_ROOT=1" \
   --network=host \
   --detach=true \
   ${DOCKER_ORIGIN:-chefserverofficial}/notifications:${VERSION:-latest} \
@@ -219,24 +200,21 @@ sudo -E docker run --rm -it \
 
 # compliance
 
-sudo docker volume create --driver local \
-       --opt type=tmpfs \
-       --opt device=tmpfs \
-       --opt o=size=100m,uid=$USER_ID \
-       compliance_sup_state
-
+# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+# if it exists, you'll need to account for its removal in order to start the services
+echo "Removing any stale LOCK files for compliance"
+sudo rm -f "${DATA_MOUNT:-/mnt/hab}/compliance_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="compliance" \
   --env="PATH=/bin" \
   --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
   --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
-  --mount type=volume,src=compliance_sup_state,dst=/hab/sup \
-  --volume ${DATA_MOUNT:-/mnt/hab}/compliance:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/compliance_svc:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/compliance_sup:/hab/sup \
   --cap-drop="NET_BIND_SERVICE" \
   --cap-drop="SETUID" \
   --cap-drop="SETGID" \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
-  --env="HAB_NON_ROOT=1" \
   --network=host \
   --detach=true \
   ${DOCKER_ORIGIN:-chefserverofficial}/compliance:${VERSION:-latest} \
@@ -244,12 +222,10 @@ sudo -E docker run --rm -it \
 
 # automate-nginx
 
-sudo docker volume create --driver local \
-       --opt type=tmpfs \
-       --opt device=tmpfs \
-       --opt o=size=100m,uid=$USER_ID \
-       automate-nginx_sup_state
-
+# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+# if it exists, you'll need to account for its removal in order to start the services
+echo "Removing any stale LOCK files for automate-nginx"
+sudo rm -f "${DATA_MOUNT:-/mnt/hab}/automate-nginx_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="automate-nginx" \
   --env="HAB_AUTOMATE_NGINX: |
@@ -259,14 +235,13 @@ ssl_port = ${PILOT_HTTPS_PORT:-8443}
   --env="PATH=/bin" \
   --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
   --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
-  --mount type=volume,src=automate-nginx_sup_state,dst=/hab/sup \
-  --volume ${DATA_MOUNT:-/mnt/hab}/nginx:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/automate-nginx_svc:/hab/svc \
+  --volume ${DATA_MOUNT:-/mnt/hab}/automate-nginx_sup:/hab/sup \
   --volume ${DATA_MOUNT:-/mnt/hab}/maintenance:/var/opt/delivery/delivery/etc \
   --cap-drop="NET_BIND_SERVICE" \
   --cap-drop="SETUID" \
   --cap-drop="SETGID" \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
-  --env="HAB_NON_ROOT=1" \
   --network=host \
   --detach=true \
   ${DOCKER_ORIGIN:-chefserverofficial}/automate-nginx:${VERSION:-latest} \

@@ -32,7 +32,7 @@ In addition, you must provide volumes for `/hab/sup` and `/hab/svc` as described
 # GROUP_ID - the group ID to use (numeric)
 
 if [ -f "env.sh" ]; then
- echo "Sourcing local env.sh"
+ echo "Setting ENVIRONMENT variables"
  . ./env.sh
 fi
 
@@ -41,20 +41,14 @@ for svc in postgresql chef-server-ctl elasticsearch oc_id bookshelf oc_bifrost o
   echo "Ensuring $svc directories exist ($dirs)"
   sudo mkdir -p $dirs
   sudo chown -R $USER_ID:$GROUP_ID $dirs
-
-  # NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
-  # if it exists, you'll need to account for its removal in order to start the services
-
-  lockfile="${DATA_MOUNT:-/mnt/hab}/${svc}_sup/default/LOCK"
-  if [ -f $lockfile ]; then
-    echo "Removing existing lockfile $lockfile"
-    rm -f $lockfile
-  fi
 done
-
 
 # postgresql
 
+# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+# if it exists, you'll need to account for its removal in order to start the services
+echo "Removing any stale LOCK files for postgresql"
+sudo rm -f "${DATA_MOUNT:-/mnt/hab}/postgresql_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="postgresql" \
   --env="HAB_POSTGRESQL=[superuser]
@@ -76,6 +70,10 @@ password = 'chefrocks'
 
 # chef-server-ctl
 
+# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+# if it exists, you'll need to account for its removal in order to start the services
+echo "Removing any stale LOCK files for chef-server-ctl"
+sudo rm -f "${DATA_MOUNT:-/mnt/hab}/chef-server-ctl_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="chef-server-ctl" \
   --env="HAB_CHEF_SERVER_CTL=[chef_server_api]
@@ -100,6 +98,10 @@ token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb
 
 # elasticsearch
 
+# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+# if it exists, you'll need to account for its removal in order to start the services
+echo "Removing any stale LOCK files for elasticsearch"
+sudo rm -f "${DATA_MOUNT:-/mnt/hab}/elasticsearch_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="elasticsearch" \
   --env="PATH=/bin" \
@@ -119,6 +121,10 @@ sudo -E docker run --rm -it \
 
 # oc_id
 
+# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+# if it exists, you'll need to account for its removal in order to start the services
+echo "Removing any stale LOCK files for oc_id"
+sudo rm -f "${DATA_MOUNT:-/mnt/hab}/oc_id_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="oc_id" \
   --env="PATH=/bin" \
@@ -137,6 +143,10 @@ sudo -E docker run --rm -it \
 
 # bookshelf
 
+# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+# if it exists, you'll need to account for its removal in order to start the services
+echo "Removing any stale LOCK files for bookshelf"
+sudo rm -f "${DATA_MOUNT:-/mnt/hab}/bookshelf_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="bookshelf" \
   --env="PATH=/bin" \
@@ -155,6 +165,10 @@ sudo -E docker run --rm -it \
 
 # oc_bifrost
 
+# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+# if it exists, you'll need to account for its removal in order to start the services
+echo "Removing any stale LOCK files for oc_bifrost"
+sudo rm -f "${DATA_MOUNT:-/mnt/hab}/oc_bifrost_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="oc_bifrost" \
   --env="PATH=/bin" \
@@ -173,6 +187,10 @@ sudo -E docker run --rm -it \
 
 # oc_erchef
 
+# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+# if it exists, you'll need to account for its removal in order to start the services
+echo "Removing any stale LOCK files for oc_erchef"
+sudo rm -f "${DATA_MOUNT:-/mnt/hab}/oc_erchef_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="oc_erchef" \
   --env="HAB_OC_ERCHEF=[data_collector]
@@ -201,6 +219,10 @@ keygen_timeout = 20000
 
 # chef-server-nginx
 
+# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
+# if it exists, you'll need to account for its removal in order to start the services
+echo "Removing any stale LOCK files for chef-server-nginx"
+sudo rm -f "${DATA_MOUNT:-/mnt/hab}/chef-server-nginx_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="chef-server-nginx" \
   --env="PATH=/bin" \
