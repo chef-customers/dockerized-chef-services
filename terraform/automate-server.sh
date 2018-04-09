@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Configurable shell environment variables:
-# DOCKER_ORIGIN - denotes the docker origin (dockerhub ID) or default to `chefserverofficial`
-# VERSION - the version identifier tag on the packages
+# AUTOMATE_DOCKER_ORIGIN - denotes the docker origin (dockerhub ID) or default to `chefserverofficial`
+# AUTOMATE_VERSION - the version identifier tag on the packages
 # HOST_IP - the IP address of the docker host. 172.17.0.1 is commonly the docker0 interface which is fine
 # ENTERPRISE - the name of the Automate enterprise to create
 # ADMIN_PASSWORD - the initial password to set for the 'admin' user in the Automate UI
@@ -52,7 +52,7 @@ password = 'chefrocks'
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
   --network=host \
   --detach=true \
-  ${DOCKER_ORIGIN:-chefserverofficial}/postgresql:${VERSION:-latest}
+  ${AUTOMATE_DOCKER_ORIGIN:-chefserverofficial}/postgresql:${AUTOMATE_VERSION:-latest}
 
 # rabbitmq
 
@@ -80,7 +80,7 @@ enabled = true
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
   --network=host \
   --detach=true \
-  ${DOCKER_ORIGIN:-chefserverofficial}/rabbitmq:${VERSION:-latest} \
+  ${AUTOMATE_DOCKER_ORIGIN:-chefserverofficial}/rabbitmq:${AUTOMATE_VERSION:-latest} \
   --peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9650 --listen-http 0.0.0.0:9660
 
 # elasticsearch
@@ -103,7 +103,7 @@ sudo -E docker run --rm -it \
   --network=host \
   --ulimit nofile=65536:65536 \
   --detach=true \
-  ${DOCKER_ORIGIN:-chefserverofficial}/elasticsearch5:${VERSION:-latest} \
+  ${AUTOMATE_DOCKER_ORIGIN:-chefserverofficial}/elasticsearch5:${AUTOMATE_VERSION:-latest} \
   --peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9651 --listen-http 0.0.0.0:9661
 
 # logstash
@@ -125,7 +125,7 @@ sudo -E docker run --rm -it \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
   --network=host \
   --detach=true \
-  ${DOCKER_ORIGIN:-chefserverofficial}/logstash:${VERSION:-latest} \
+  ${AUTOMATE_DOCKER_ORIGIN:-chefserverofficial}/logstash:${AUTOMATE_VERSION:-latest} \
   --peer ${HOST_IP:-172.17.0.1} --bind elasticsearch:elasticsearch5.default --bind rabbitmq:rabbitmq.default --listen-gossip 0.0.0.0:9652 --listen-http 0.0.0.0:9662
 
 # workflow-server
@@ -154,7 +154,7 @@ token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
   --network=host \
   --detach=true \
-  ${DOCKER_ORIGIN:-chefserverofficial}/workflow-server:${VERSION:-latest} \
+  ${AUTOMATE_DOCKER_ORIGIN:-chefserverofficial}/workflow-server:${AUTOMATE_VERSION:-latest} \
   --peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind elasticsearch:elasticsearch5.default --bind rabbitmq:rabbitmq.default --listen-gossip 0.0.0.0:9653 --listen-http 0.0.0.0:9663
 
 # notifications
@@ -176,7 +176,7 @@ sudo -E docker run --rm -it \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
   --network=host \
   --detach=true \
-  ${DOCKER_ORIGIN:-chefserverofficial}/notifications:${VERSION:-latest} \
+  ${AUTOMATE_DOCKER_ORIGIN:-chefserverofficial}/notifications:${AUTOMATE_VERSION:-latest} \
   --peer ${HOST_IP:-172.17.0.1} --bind elasticsearch:elasticsearch5.default --bind rabbitmq:rabbitmq.default --listen-gossip 0.0.0.0:9654 --listen-http 0.0.0.0:9664
 
 # compliance
@@ -198,7 +198,7 @@ sudo -E docker run --rm -it \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
   --network=host \
   --detach=true \
-  ${DOCKER_ORIGIN:-chefserverofficial}/compliance:${VERSION:-latest} \
+  ${AUTOMATE_DOCKER_ORIGIN:-chefserverofficial}/compliance:${AUTOMATE_VERSION:-latest} \
   --peer ${HOST_IP:-172.17.0.1} --bind elasticsearch:elasticsearch5.default --listen-gossip 0.0.0.0:9655 --listen-http 0.0.0.0:9665
 
 # automate-nginx
@@ -225,5 +225,5 @@ ssl_port = ${PILOT_HTTPS_PORT:-8443}
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
   --network=host \
   --detach=true \
-  ${DOCKER_ORIGIN:-chefserverofficial}/automate-nginx:${VERSION:-latest} \
+  ${AUTOMATE_DOCKER_ORIGIN:-chefserverofficial}/automate-nginx:${AUTOMATE_VERSION:-latest} \
   --peer ${HOST_IP:-172.17.0.1} --bind compliance:compliance.default --bind elasticsearch:elasticsearch5.default --bind workflow:workflow-server.default --bind notifications:notifications.default --listen-gossip 0.0.0.0:9656 --listen-http 0.0.0.0:9666

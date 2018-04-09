@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Configurable shell environment variables:
-# DOCKER_ORIGIN - denotes the docker origin (dockerhub ID) or default to `chefserverofficial`
-# VERSION -  the version identifier tag on the packages
+# CHEF_SERVER_DOCKER_ORIGIN - denotes the docker origin (dockerhub ID) or default to `chefserverofficial`
+# CHEF_SERVER_VERSION -  the version identifier tag on the packages
 # HOST_IP - the IP address of the docker host. 172.17.0.1 is commonly the docker0 interface which is fine
 # AUTOMATE_ENABLED - enable the Automate data collector (true or false)
 # AUTOMATE_SERVER - the IP address or hostname of the Automate server
@@ -51,7 +51,7 @@ password = 'chefrocks'
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
   --network=host \
   --detach=true \
-  ${DOCKER_ORIGIN:-chefserverofficial}/postgresql:${VERSION:-latest}
+  ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/postgresql:${CHEF_SERVER_VERSION:-latest}
 
 # chef-server-ctl
 
@@ -78,7 +78,7 @@ token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
   --network=host \
   --detach=true \
-  ${DOCKER_ORIGIN:-chefserverofficial}/chef-server-ctl:${VERSION:-latest} \
+  ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/chef-server-ctl:${CHEF_SERVER_VERSION:-latest} \
   --peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9650 --listen-http 0.0.0.0:9660
 
 # elasticsearch
@@ -101,7 +101,7 @@ sudo -E docker run --rm -it \
   --network=host \
   --ulimit nofile=65536:65536 \
   --detach=true \
-  ${DOCKER_ORIGIN:-chefserverofficial}/elasticsearch5:${VERSION:-latest} \
+  ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/elasticsearch5:${CHEF_SERVER_VERSION:-latest} \
   --peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9651 --listen-http 0.0.0.0:9661
 
 # oc_id
@@ -123,7 +123,7 @@ sudo -E docker run --rm -it \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
   --network=host \
   --detach=true \
-  ${DOCKER_ORIGIN:-chefserverofficial}/oc_id:${VERSION:-latest} \
+  ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_id:${CHEF_SERVER_VERSION:-latest} \
   --peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9652 --listen-http 0.0.0.0:9662
 
 # bookshelf
@@ -145,7 +145,7 @@ sudo -E docker run --rm -it \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
   --network=host \
   --detach=true \
-  ${DOCKER_ORIGIN:-chefserverofficial}/bookshelf:${VERSION:-latest} \
+  ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/bookshelf:${CHEF_SERVER_VERSION:-latest} \
   --peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9653 --listen-http 0.0.0.0:9663
 
 # oc_bifrost
@@ -167,7 +167,7 @@ sudo -E docker run --rm -it \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
   --network=host \
   --detach=true \
-  ${DOCKER_ORIGIN:-chefserverofficial}/oc_bifrost:${VERSION:-latest} \
+  ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_bifrost:${CHEF_SERVER_VERSION:-latest} \
   --peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9654 --listen-http 0.0.0.0:9664
 
 # oc_erchef
@@ -199,7 +199,7 @@ keygen_timeout = 20000
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
   --network=host \
   --detach=true \
-  ${DOCKER_ORIGIN:-chefserverofficial}/oc_erchef:${VERSION:-latest} \
+  ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_erchef:${CHEF_SERVER_VERSION:-latest} \
   --peer ${HOST_IP:-172.17.0.1} --bind bookshelf:bookshelf.default --bind oc_bifrost:oc_bifrost.default --bind database:postgresql.default --bind elasticsearch:elasticsearch5.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9655 --listen-http 0.0.0.0:9665
 
 # chef-server-nginx
@@ -221,5 +221,5 @@ sudo -E docker run --rm -it \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
   --network=host \
   --detach=true \
-  ${DOCKER_ORIGIN:-chefserverofficial}/chef-server-nginx:${VERSION:-latest} \
+  ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/chef-server-nginx:${CHEF_SERVER_VERSION:-latest} \
   --peer ${HOST_IP:-172.17.0.1} --bind oc_erchef:oc_erchef.default --bind oc_bifrost:oc_bifrost.default --bind oc_id:oc_id.default --bind bookshelf:bookshelf.default --bind elasticsearch:elasticsearch5.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9656 --listen-http 0.0.0.0:9666
