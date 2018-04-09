@@ -1,6 +1,3 @@
-Example group file:
-
-```
 root:x:0:
 bin:x:1:daemon
 sys:x:2:
@@ -25,5 +22,4 @@ mail:x:34:
 nogroup:x:99:
 users:x:999:
 hab:x:42:hab:
-testuser:x:8888:
-```
+${container_username}:x:${container_gid}:
