@@ -51,6 +51,7 @@ password = 'chefrocks'
   --cap-drop="SETGID" \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
   --network=host \
+  --ulimit nofile=65536:65536 \
   --detach=true \
   ${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/postgresql:${AUTOMATE_VERSION:-stable}
 
@@ -79,6 +80,7 @@ enabled = true
   --cap-drop="SETGID" \
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
   --network=host \
+  --ulimit nofile=65536:65536 \
   --detach=true \
   ${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/rabbitmq:${AUTOMATE_VERSION:-stable} \
   --peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9650 --listen-http 0.0.0.0:9660
@@ -141,6 +143,8 @@ enterprise = \"${ENTERPRISE:-default}\"
 default_admin_password = \"${ADMIN_PASSWORD:-chefrocks}\"
 [data_collector]
 token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506}\"
+[mlsa]
+accept = true
 " \
   --env="PATH=/bin" \
   --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
@@ -187,6 +191,11 @@ echo "Removing any stale LOCK files for compliance"
 sudo rm -f "${DATA_MOUNT:-/mnt/hab}/compliance_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="compliance" \
+  --env="HAB_COMPLIANCE_SERVICE=[service]
+host = \"0.0.0.0\"
+[profiles]
+secrets_key = \"12345678901234567890123456789012\"
+" \
   --env="PATH=/bin" \
   --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
   --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
@@ -199,7 +208,7 @@ sudo -E docker run --rm -it \
   --network=host \
   --detach=true \
   ${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/compliance:${AUTOMATE_VERSION:-stable} \
-  --peer ${HOST_IP:-172.17.0.1} --bind elasticsearch:elasticsearch5.default --listen-gossip 0.0.0.0:9655 --listen-http 0.0.0.0:9665
+  --peer ${HOST_IP:-172.17.0.1} --bind postgresql:postgresql.default --bind elasticsearch:elasticsearch5.default --bind workflow:workflow-server.default --listen-gossip 0.0.0.0:9655 --listen-http 0.0.0.0:9665
 
 # automate-nginx
 
@@ -209,9 +218,11 @@ echo "Removing any stale LOCK files for automate-nginx"
 sudo rm -f "${DATA_MOUNT:-/mnt/hab}/automate-nginx_sup/default/LOCK"
 sudo -E docker run --rm -it \
   --name="automate-nginx" \
-  --env="HAB_AUTOMATE_NGINX: |
+  --env="HAB_AUTOMATE_NGINX=
 port = ${PILOT_HTTP_PORT:-8080}
 ssl_port = ${PILOT_HTTPS_PORT:-8443}
+[mlsa]
+accept = true
 " \
   --env="PATH=/bin" \
   --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
