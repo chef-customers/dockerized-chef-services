@@ -1,18 +1,14 @@
 # dockerized-chef-services
 Docker definitions for Chef Server and Automate 1.x
 
-# 2 Standalones configuration
-
-The [2 Standalones configuration](https://github.com/chef-customers/dockerized-chef-services/tree/master/2-standalones) is closest to the default topology for Chef Automate, where a standalone Chef Server is paired with a standalone Chef Automate server.
-
-![2 standalones diagram](https://www.lucidchart.com/publicSegments/view/4f01dc86-c34a-49a9-b619-f3d1056e7a41/image.png)
+![Architecture Diagram](https://www.lucidchart.com/publicSegments/view/4f01dc86-c34a-49a9-b619-f3d1056e7a41/image.png)
 
 ## How it works
 
-* All of the Chef Server and Chef Automate services have been packaged as Habitat `.hart` files here: [https://bldr.habitat.sh/#/pkgs/chef-server]
-* and exported to docker containers here:  [https://hub.docker.com/r/chefserverofficial/]
-* These containers support running under a random, arbitrary user and/or group id.
-* Launch containers via `docker-compose` or `docker run ...`  Compose files have been created which pull the docker containers and run them using Host mode networking. Alternatively, [docker run Chef Server](https://github.com/chef-customers/dockerized-chef-services/tree/master/docker_run_chef_server.md) and [docker run Automate](https://github.com/chef-customers/dockerized-chef-services/tree/master/docker_run_automate.md) files demonstrate how to launch via `docker run ...` commands.
+* All of the Chef Server and Chef Automate services have been packaged as Habitat `.hart` files
+* The hab packages have been exported to docker containers and published to docker hub
+* These containers support running under a random, arbitrary effective user and/or group id
+* Launch containers via the included [Chef Server](https://github.com/chef-customers/dockerized-chef-services/tree/master/terraform/chef-server.sh) or [Automate Server](https://github.com/chef-customers/dockerized-chef-services/tree/master/terraform/automate-server.sh) scripts, or alternatively via `docker run ..`
 * Each host forms its own non-permanent Habitat gossip ring, sharing service discovery data intra-host only
 * Environment variables are used to configure settings from the default
 
@@ -20,84 +16,15 @@ The [2 Standalones configuration](https://github.com/chef-customers/dockerized-c
 
 ### Using AWS and Terraform
 
-Customize the `main.tf` [Terraform](terraform.io) configuration file and deploy with `terraform apply`
+Customize the `terraform.tfvars.example` [Terraform](https://terraform.io) configuration file, rename it to `terraform.tfvars` and deploy with `terraform apply`
 
-### Manually
-
-1. Provision 2 hosts that are running a modern Linux OS (RHEL 7 or Ubuntu 16.04) as well as recent versions of Docker and optionally docker-compose
-2. Attach SAN (block) storage to each host for storing persistent data
-3. Read [Deployment Notes](https://github.com/chef-customers/dockerized-chef-services#deployment-notes)
-
-### Data Directories
-
-Each Host must have directories created under `$DATA_MOUNT` and be owned by `$USER_ID`:
-
-For Automate 1.x:
-
-* postgresql
-* rabbitmq
-* elasticsearch
-* maintenance
-* workflow
-* compliance
-* nginx
-
-For Chef Server:
-
-* postgresql
-* elasticsearch
-* nginx
-
-The directories above should be created prior and are expected to be stable to provide persistent storage to the containers.
-
-### Arbitrary Random User/Group ids
-
-If specifying an arbitrary and random uid/gid for the container processes,
-you must bind mount a [passwd](passwd_example.md) and [group](group_example.md) file with those users into the container.
-The example files provided should work just fine after replacing the `testuser` entry with your own.
-
-#### Docker Compose
-1. copy the `automate.yml` file to the first host, and run:
-```
-export ENTERPRISE=mycompany
-export ADMIN_PASSWORD=SuperSecurePassword42
-export AUTOMATE_TOKEN=93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506
-export USER_ID=9999
-export GROUP_ID=8888
-export DATA_MOUNT=/path/to/persistent/storage/directory
-sudo -E docker-compose -f automate.yml up -d
-```
-2. copy the `chef-server.yml` file to the second host and run:
-```
-export AUTOMATE_ENABLED=true
-export AUTOMATE_SERVER=automate-server-hostname-or-ip.mycompany.com
-export AUTOMATE_TOKEN=93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506
-export USER_ID=9999
-export GROUP_ID=8888
-export DATA_MOUNT=/path/to/persistent/storage/directory
-sudo -E docker-compose -f chef-server.yml up -d
-```
-
-### Docker Run
-1. copy the bash script contents of [docker_run_automate.md](docker_run_automate.md) file to the first host, rename it to .sh, and run:
-```
-export ENTERPRISE=mycompany
-export ADMIN_PASSWORD=SuperSecurePassword42
-export AUTOMATE_TOKEN=93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506
-export USER_ID=9999
-export GROUP_ID=8888
-export DATA_MOUNT=/path/to/persistent/storage/directory
-./docker_run_automate.sh
-```
-2. copy the bash script contents of [docker_run_chef_server.md](docker_run_chef_server.md) file to the second host, rename it to .sh, and run:
-```
-export AUTOMATE_ENABLED=true
-export AUTOMATE_SERVER=automate-server-hostname-or-ip.mycompany.com
-export AUTOMATE_TOKEN=93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506
-export USER_ID=9999
-export GROUP_ID=8888
-export DATA_MOUNT=/path/to/persistent/storage/directory
-./docker_run_chef_server.sh
+```bash
+git clone https://github.com/chef-customers/dockerized-chef-services.git
+cd dockerized-chef-services/terraform
+cp terraform.tfvars.example terraform.tfvars
+vi terraform.tfvars # change anything that needs customization
+terraform init
+terraform apply
 ```
 
 ## Deployment notes
@@ -154,30 +81,16 @@ sudo iptables -A PREROUTING -t nat -p tcp --dport 443 -j REDIRECT --to-port 8443
 
 Run the functional test suite to ensure Chef server is working:
 
-docker-compose:
-
 ```
-docker-compose -f chef-server.yml exec chef-server-ctl chef-server-test
-```
-
-docker run:
-
-```
-docker exec -it <container id of chef-server-ctl> chef-server-test
+docker exec -it chef-server-ctl chef-server-test
 ```
 
 Add users, orgs, etc to the Chef server
 
-docker-compose:
-
-```
-docker-compose -f chef-server.yml exec chef-server-ctl chef-server-ctl (subcommands)
-```
-
 docker run:
 
 ```
-docker exec -it <container id of chef-server-ctl> chef-server-ctl (subcommands)
+docker exec -it chef-server-ctl chef-server-ctl (subcommands)
 ```
 
 ## Logging
@@ -185,16 +98,10 @@ All container logs are directed to STDOUT. You should employ a Docker logging me
 
 To view the status of any container:
 
-docker-compose:
-
-```
-docker-compose logs <container name>
-```
-
 docker run:
 
 ```
-docker logs <container id>
+docker logs <container name or id>
 ```
 
 An easy way to check on the health of Chef Server and Automate is to look for the health checks from `oc_erchef` and `workflow-server` containers accordingly. They will look like:
