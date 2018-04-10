@@ -2,7 +2,9 @@
 
 # Configurable shell environment variables:
 # CHEF_SERVER_DOCKER_ORIGIN - denotes the docker origin (dockerhub ID) or default to `chefserverofficial`
-# CHEF_SERVER_VERSION -  the version identifier tag on the packages
+# AUTOMATE_DOCKER_ORIGIN - denotes the docker origin (dockerhub ID) or default to `chefdemo`
+# CHEF_SERVER_VERSION -  the version identifier tag on the Chef Server packages
+# AUTOMATE_VERSION -  the version identifier tag on the postgresql and elasticsearch packages from the `chefdemo` docker origin
 # HOST_IP - the IP address of the docker host. 172.17.0.1 is commonly the docker0 interface which is fine
 # AUTOMATE_ENABLED - enable the Automate data collector (true or false)
 # AUTOMATE_SERVER - the IP address or hostname of the Automate server
@@ -51,7 +53,7 @@ password = 'chefrocks'
   --user="${USER_ID:-42}:${GROUP_ID:-42}" \
   --network=host \
   --detach=true \
-  ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/postgresql:${CHEF_SERVER_VERSION:-stable}
+  ${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/postgresql:${AUTOMATE_VERSION:-stable}
 
 # chef-server-ctl
 
@@ -101,7 +103,7 @@ sudo -E docker run --rm -it \
   --network=host \
   --ulimit nofile=65536:65536 \
   --detach=true \
-  ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/elasticsearch5:${CHEF_SERVER_VERSION:-stable} \
+  ${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/elasticsearch5:${AUTOMATE_VERSION:-stable} \
   --peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9651 --listen-http 0.0.0.0:9661
 
 # oc_id
