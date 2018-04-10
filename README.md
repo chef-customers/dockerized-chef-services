@@ -16,7 +16,7 @@ Docker definitions for Chef Server and Automate 1.x
 
 ### Using AWS and Terraform
 
-Customize the `terraform.tfvars.example` [Terraform](terraform.io) configuration file, rename it to `terraform.tfvars` and deploy with `terraform apply`
+Customize the `terraform.tfvars.example` [Terraform](https://terraform.io) configuration file, rename it to `terraform.tfvars` and deploy with `terraform apply`
 
 ```bash
 git clone https://github.com/chef-customers/dockerized-chef-services.git

@@ -1,0 +1,113 @@
+# Configurable environment variables:
+# HAB_ORIGIN - denotes the docker origin (dockerhub ID)
+# VERSION -  the version identifier tag on the packages
+# HOST_IP - the IP address of the docker host. 172.17.0.1 is commonly the docker0 interface which is fine
+# AUTOMATE_ENABLED - enable the Automate data collector (true or false)
+# AUTOMATE_SERVER - the IP address or hostname of the Automate server
+# AUTOMATE_TOKEN - the token for the Automate server data collector
+version: '2.1'
+services:
+  postgresql:
+    image: ${HAB_ORIGIN:-chefserverofficial}/postgresql
+    network_mode: host
+    environment:
+      HAB_POSTGRESQL: |
+        [superuser]
+        name = 'hab'
+        password = 'chefrocks'
+    volumes:
+      - postgresql-data:/hab/svc/postgresql/data
+
+  chef-server-ctl:
+    image: ${HAB_ORIGIN:-chefserverofficial}/chef-server-ctl
+    network_mode: host
+    command: --peer ${HOST_IP:-172.17.0.1}
+      --listen-gossip 0.0.0.0:9650
+      --listen-http 0.0.0.0:9660
+    environment:
+      HAB_CHEF_SERVER_CTL: |
+        [chef_server_api]
+        ip = '${HOST_IP:-172.17.0.1}'
+        [secrets.data_collector]
+        token = "${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506}"
+
+  elasticsearch:
+    image: ${HAB_ORIGIN:-chefserverofficial}/elasticsearch5:${VERSION:-latest}
+    network_mode: host
+    command: --peer ${HOST_IP:-172.17.0.1}
+      --listen-gossip 0.0.0.0:9651
+      --listen-http 0.0.0.0:9661
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - elasticsearch-data:/hab/svc/elasticsearch/data
+
+  oc_id:
+    image: ${HAB_ORIGIN:-chefserverofficial}/oc_id
+    network_mode: host
+    command: --peer ${HOST_IP:-172.17.0.1}
+      --bind database:postgresql.default
+      --bind chef-server-ctl:chef-server-ctl.default
+      --listen-gossip 0.0.0.0:9652
+      --listen-http 0.0.0.0:9662
+
+  bookshelf:
+    image: ${HAB_ORIGIN:-chefserverofficial}/bookshelf
+    network_mode: host
+    command: --peer ${HOST_IP:-172.17.0.1}
+      --bind database:postgresql.default
+      --bind chef-server-ctl:chef-server-ctl.default
+      --listen-gossip 0.0.0.0:9653
+      --listen-http 0.0.0.0:9663
+
+  oc_bifrost:
+    image: ${HAB_ORIGIN:-chefserverofficial}/oc_bifrost
+    network_mode: host
+    command: --peer ${HOST_IP:-172.17.0.1}
+      --bind database:postgresql.default
+      --bind chef-server-ctl:chef-server-ctl.default
+      --listen-gossip 0.0.0.0:9654
+      --listen-http 0.0.0.0:9664
+
+  oc_erchef:
+    image: ${HAB_ORIGIN:-chefserverofficial}/oc_erchef
+    network_mode: host
+    volumes:
+      - erchef-data:/hab/svc/oc_erchef/data
+    command: --peer ${HOST_IP:-172.17.0.1}
+      --bind bookshelf:bookshelf.default
+      --bind oc_bifrost:oc_bifrost.default
+      --bind database:postgresql.default
+      --bind elasticsearch:elasticsearch5.default
+      --bind chef-server-ctl:chef-server-ctl.default
+      --listen-gossip 0.0.0.0:9655
+      --listen-http 0.0.0.0:9665
+    environment:
+      HAB_OC_ERCHEF: |
+        [data_collector]
+        enabled = ${AUTOMATE_ENABLED:-false}
+        server = "${AUTOMATE_SERVER:-localhost}"
+        port = 443
+
+  chef-server-nginx:
+    image: ${HAB_ORIGIN:-chefserverofficial}/chef-server-nginx
+    network_mode: host
+    volumes:
+      - nginx-data:/hab/svc/chef-server-nginx/data
+    command: --peer ${HOST_IP:-172.17.0.1}
+      --bind oc_erchef:oc_erchef.default
+      --bind oc_bifrost:oc_bifrost.default
+      --bind oc_id:oc_id.default
+      --bind bookshelf:bookshelf.default
+      --bind elasticsearch:elasticsearch5.default
+      --bind chef-server-ctl:chef-server-ctl.default
+      --listen-gossip 0.0.0.0:9656
+      --listen-http 0.0.0.0:9666
+
+volumes:
+  postgresql-data:
+  elasticsearch-data:
+  erchef-data:
+  nginx-data:

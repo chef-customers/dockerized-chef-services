@@ -5,7 +5,7 @@ aws_key_pair_file = "~/.ssh/jmiller"
 tag_dept = "SCE"
 tag_contact = "jeremy"
 #
-# Optional
+# Defaults
 #
 aws_ami_user = "centos"
 aws_ami_id = "" # search filter will find the latest AMI if emtpy string
