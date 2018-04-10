@@ -91,9 +91,15 @@ data "template_file" "passwd" {
 
 resource "aws_instance" "automate_cluster" {
   count = 2
-  # count.index
-  # 0 Automate Server
-  # 1 Chef Server
+  # We execute this resource twice, creating two aws_instances. We can reference each instance via count.index
+  # For example: aws_instance.automate_cluster.*.public_dns[count.index]
+  # count.index will be one of:
+  # 0 == Automate Server
+  # 1 == Chef Server
+  # The advantage of this is two-fold:
+  #  1. we do not need duplicated provisioner blocks for each
+  #  2. the provisioner blocks will execute in parallel - this cuts provisioning times roughly in half
+
   connection {
     user        = "${var.aws_ami_user}"
     private_key = "${file("${var.aws_key_pair_file}")}"
@@ -122,6 +128,7 @@ resource "aws_instance" "automate_cluster" {
 
 resource "null_resource" "provision_cluster" {
   count = 2
+  # We execute this resource twice. See resource "aws_instance" notes above.
 
   connection {
     user        = "${var.aws_ami_user}"
