@@ -2,36 +2,37 @@ terraform {
   required_version = ">= 0.11.0"
 }
 
-# AWS variables - change these as needed
-variable "aws_region" { default = "us-west-2" }
-variable "aws_profile" { default = "default" }
-variable "aws_vpc" { default = "vpc-41d45124" }
-variable "aws_subnet" { default = "subnet-7424b611" }
-variable "chef_server_instance_type" { default = "m5.xlarge" }
-variable "automate_server_instance_type" { default = "m5.2xlarge" }
-variable "default_security_group" { default = "sg-c9beb2ac" }
-variable "aws_ami_user" { default = "centos" }
-variable "aws_ami_id" { default = "" }  # leave blank to auto-select the latest highperf CentOS 7 image
-variable "aws_instance_names" { default = ["automate-server", "chef-server"] }
-variable "aws_instance_types" { default = ["m4.xlarge", "m4.2xlarge"] }
+# Change these from defaults as needed in `terraform.tfvars`
 variable "aws_key_pair_name" { }
 variable "aws_key_pair_file" { }
 variable "tag_dept" { }
 variable "tag_contact" { }
-variable "container_username" { }
-variable "container_uid" { }
-variable "container_gid" { }
-variable "container_data_mount" { }
-variable "automate_enterprise" { }
 variable "automate_admin_password" { }
-variable "docker_host_ip" { }
-variable "automate_enabled" { }
-variable "automate_token" { }
-variable "chef_server_docker_origin" { }
-variable "automate_docker_origin" { }
-variable "chef_server_version" { }
-variable "automate_version" { }
-variable "chef_server_org" { }
+
+# General AWS variables - likely ok to leave as default
+variable "aws_region" { default = "us-west-2" }
+variable "aws_profile" { default = "default" }
+variable "aws_vpc" { default = "vpc-41d45124" }
+variable "aws_subnet" { default = "subnet-7424b611" }
+variable "default_security_group" { default = "sg-c9beb2ac" }
+variable "aws_ami_user" { default = "centos" }
+variable "aws_ami_id" { default = "" }  # leave blank to auto-select the latest highperf CentOS 7 image
+variable "aws_instance_names" { default = ["automate-server", "chef-server"] }
+variable "aws_instance_types" { default = ["m4.2xlarge", "m4.xlarge"] } # Automate, Chef Server
+
+# chef services - also ok to leave as default
+variable "container_username" { default = "chef-dev-ux" }
+variable "container_uid" { default = "9999" }
+variable "container_gid" { default = "8888" }
+variable "container_data_mount" { default = "/mnt/data" }
+variable "automate_enterprise" { default = "brewinc" }
+variable "docker_host_ip" { default = "$(hostname --ip-address)" }
+variable "automate_enabled" { default = "true" }
+variable "automate_token" { default = "93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506" }
+variable "chef_server_docker_origin" { default = "chefserverofficial" }
+variable "automate_docker_origin" { default = "chefdemo" }
+variable "chef_server_version" { default = "stable" }
+variable "automate_version" { default = "stable" }
 
 provider "aws" {
   region  = "${var.aws_region}"
