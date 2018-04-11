@@ -12,175 +12,80 @@
 # DATA_MOUNT - the mount point for the data
 # USER_ID - the user ID to use (numeric)
 # GROUP_ID - the group ID to use (numeric)
+#
+# The above variables should all be set in a file named env.sh that lives beside this script.
 
-if [ -f "env.sh" ]; then
+THISDIR="$(dirname "$(which "$0")")"
+if [ -f "${THISDIR}/env.sh" ]; then
  echo "Setting ENVIRONMENT variables"
- . ./env.sh
+ . $THISDIR/env.sh
 fi
 
-for svc in postgresql chef-server-ctl elasticsearch oc_id bookshelf oc_bifrost oc_erchef chef-server-nginx; do
-  # NOTE: If launching all the services at once from a down state, then clearing out `/hab/sup` ensures
-  # a clean slate so that the ring can be established. This guarantees ring recovery when things go sideways..
-  # Do not do this for (re-)starting individual services as it will lead to exclusion of the service from the ring.
-  sudo rm -rf "${DATA_MOUNT:-/mnt/hab}/${svc}_sup"
+docker_svc_start () {
+  echo "Starting $1"
+  dirs="${DATA_MOUNT:-/mnt/hab}/${1}_svc ${DATA_MOUNT:-/mnt/hab}/${1}_sup"
+  echo "Ensuring $dirs directories exist and removing stale LOCK files"
+  mkdir -p $dirs
+  rm -f ${DATA_MOUNT:-/mnt/hab}/${1}_sup/default/LOCK
+  docker run --rm -it \
+    --name="${1}" \
+    --env="${4:-ILOVECHEF=1}" \
+    --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
+    --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
+    --volume ${DATA_MOUNT:-/mnt/hab}/${1}_svc:/hab/svc \
+    --volume ${DATA_MOUNT:-/mnt/hab}/${1}_sup:/hab/sup \
+    --cap-drop="NET_BIND_SERVICE" \
+    --cap-drop="SETUID" \
+    --cap-drop="SETGID" \
+    --ulimit nofile=65536:65536 \
+    --user="${USER_ID:-42}:${GROUP_ID:-42}" \
+    --network=host \
+    --detach=true \
+    $2 \
+    $3
+}
 
-  dirs="${DATA_MOUNT:-/mnt/hab}/${svc}_svc ${DATA_MOUNT:-/mnt/hab}/${svc}_sup"
-  echo "Ensuring $svc directories exist ($dirs)"
-  sudo mkdir -p $dirs
-  sudo chown -R $USER_ID:$GROUP_ID $dirs
-done
-
-# postgresql
-
-# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
-# if it exists, you'll need to account for its removal in order to start the services
-echo "Removing any stale LOCK files for postgresql"
-sudo rm -f "${DATA_MOUNT:-/mnt/hab}/postgresql_sup/default/LOCK"
-sudo -E docker run --rm -it \
-  --name="postgresql" \
-  --env="HAB_POSTGRESQL=[superuser]
+declare -A postgresql
+postgresql["image"]="${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/postgresql:${AUTOMATE_VERSION:-stable}"
+postgresql["env"]="HAB_POSTGRESQL=[superuser]
 name = 'hab'
 password = 'chefrocks'
-" \
-  --env="PATH=/bin" \
-  --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
-  --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
-  --volume ${DATA_MOUNT:-/mnt/hab}/postgresql_svc:/hab/svc \
-  --volume ${DATA_MOUNT:-/mnt/hab}/postgresql_sup:/hab/sup \
-  --cap-drop="NET_BIND_SERVICE" \
-  --cap-drop="SETUID" \
-  --cap-drop="SETGID" \
-  --user="${USER_ID:-42}:${GROUP_ID:-42}" \
-  --network=host \
-  --detach=true \
-  ${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/postgresql:${AUTOMATE_VERSION:-stable}
+"
+postgresql["supargs"]=""
 
-# chef-server-ctl
-
-# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
-# if it exists, you'll need to account for its removal in order to start the services
-echo "Removing any stale LOCK files for chef-server-ctl"
-sudo rm -f "${DATA_MOUNT:-/mnt/hab}/chef-server-ctl_sup/default/LOCK"
-sudo -E docker run --rm -it \
-  --name="chef-server-ctl" \
-  --env="HAB_CHEF_SERVER_CTL=[chef_server_api]
+declare -A chef_server_ctl
+chef_server_ctl["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/chef-server-ctl:${CHEF_SERVER_VERSION:-stable}"
+chef_server_ctl["env"]="HAB_CHEF_SERVER_CTL=[chef_server_api]
 ip = \"${HOST_IP:-172.17.0.1}\"
 ssl_port = "8443"
 [secrets.data_collector]
 token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506}\"
-" \
-  --env="PATH=/bin" \
-  --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
-  --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
-  --volume ${DATA_MOUNT:-/mnt/hab}/chef-server-ctl_svc:/hab/svc \
-  --volume ${DATA_MOUNT:-/mnt/hab}/chef-server-ctl_sup:/hab/sup \
-  --cap-drop="NET_BIND_SERVICE" \
-  --cap-drop="SETUID" \
-  --cap-drop="SETGID" \
-  --user="${USER_ID:-42}:${GROUP_ID:-42}" \
-  --network=host \
-  --detach=true \
-  ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/chef-server-ctl:${CHEF_SERVER_VERSION:-stable} \
-  --peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9650 --listen-http 0.0.0.0:9660
+"
+chef_server_ctl["supargs"]="--peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9650 --listen-http 0.0.0.0:9660"
 
-# elasticsearch
+declare -A elasticsearch
+elasticsearch["image"]="${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/elasticsearch5:${AUTOMATE_VERSION:-stable}"
+elasticsearch["env"]=""
+elasticsearch["supargs"]="--peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9651 --listen-http 0.0.0.0:9661"
 
-# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
-# if it exists, you'll need to account for its removal in order to start the services
-echo "Removing any stale LOCK files for elasticsearch"
-sudo rm -f "${DATA_MOUNT:-/mnt/hab}/elasticsearch_sup/default/LOCK"
-sudo -E docker run --rm -it \
-  --name="elasticsearch" \
-  --env="PATH=/bin" \
-  --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
-  --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
-  --volume ${DATA_MOUNT:-/mnt/hab}/elasticsearch_svc:/hab/svc \
-  --volume ${DATA_MOUNT:-/mnt/hab}/elasticsearch_sup:/hab/sup \
-  --cap-drop="NET_BIND_SERVICE" \
-  --cap-drop="SETUID" \
-  --cap-drop="SETGID" \
-  --user="${USER_ID:-42}:${GROUP_ID:-42}" \
-  --network=host \
-  --ulimit nofile=65536:65536 \
-  --detach=true \
-  ${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/elasticsearch5:${AUTOMATE_VERSION:-stable} \
-  --peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9651 --listen-http 0.0.0.0:9661
+declare -A oc_id
+oc_id["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_id:${CHEF_SERVER_VERSION:-stable}"
+oc_id["env"]=""
+oc_id["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9652 --listen-http 0.0.0.0:9662"
 
-# oc_id
+declare -A bookshelf
+bookshelf["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/bookshelf:${CHEF_SERVER_VERSION:-stable}"
+bookshelf["env"]=""
+bookshelf["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9653 --listen-http 0.0.0.0:9663"
 
-# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
-# if it exists, you'll need to account for its removal in order to start the services
-echo "Removing any stale LOCK files for oc_id"
-sudo rm -f "${DATA_MOUNT:-/mnt/hab}/oc_id_sup/default/LOCK"
-sudo -E docker run --rm -it \
-  --name="oc_id" \
-  --env="PATH=/bin" \
-  --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
-  --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
-  --volume ${DATA_MOUNT:-/mnt/hab}/oc_id_svc:/hab/svc \
-  --volume ${DATA_MOUNT:-/mnt/hab}/oc_id_sup:/hab/sup \
-  --cap-drop="NET_BIND_SERVICE" \
-  --cap-drop="SETUID" \
-  --cap-drop="SETGID" \
-  --user="${USER_ID:-42}:${GROUP_ID:-42}" \
-  --network=host \
-  --detach=true \
-  ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_id:${CHEF_SERVER_VERSION:-stable} \
-  --peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9652 --listen-http 0.0.0.0:9662
+declare -A oc_bifrost
+oc_bifrost["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_bifrost:${CHEF_SERVER_VERSION:-stable}"
+oc_bifrost["env"]=""
+oc_bifrost["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9654 --listen-http 0.0.0.0:9664"
 
-# bookshelf
-
-# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
-# if it exists, you'll need to account for its removal in order to start the services
-echo "Removing any stale LOCK files for bookshelf"
-sudo rm -f "${DATA_MOUNT:-/mnt/hab}/bookshelf_sup/default/LOCK"
-sudo -E docker run --rm -it \
-  --name="bookshelf" \
-  --env="PATH=/bin" \
-  --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
-  --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
-  --volume ${DATA_MOUNT:-/mnt/hab}/bookshelf_svc:/hab/svc \
-  --volume ${DATA_MOUNT:-/mnt/hab}/bookshelf_sup:/hab/sup \
-  --cap-drop="NET_BIND_SERVICE" \
-  --cap-drop="SETUID" \
-  --cap-drop="SETGID" \
-  --user="${USER_ID:-42}:${GROUP_ID:-42}" \
-  --network=host \
-  --detach=true \
-  ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/bookshelf:${CHEF_SERVER_VERSION:-stable} \
-  --peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9653 --listen-http 0.0.0.0:9663
-
-# oc_bifrost
-
-# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
-# if it exists, you'll need to account for its removal in order to start the services
-echo "Removing any stale LOCK files for oc_bifrost"
-sudo rm -f "${DATA_MOUNT:-/mnt/hab}/oc_bifrost_sup/default/LOCK"
-sudo -E docker run --rm -it \
-  --name="oc_bifrost" \
-  --env="PATH=/bin" \
-  --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
-  --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
-  --volume ${DATA_MOUNT:-/mnt/hab}/oc_bifrost_svc:/hab/svc \
-  --volume ${DATA_MOUNT:-/mnt/hab}/oc_bifrost_sup:/hab/sup \
-  --cap-drop="NET_BIND_SERVICE" \
-  --cap-drop="SETUID" \
-  --cap-drop="SETGID" \
-  --user="${USER_ID:-42}:${GROUP_ID:-42}" \
-  --network=host \
-  --detach=true \
-  ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_bifrost:${CHEF_SERVER_VERSION:-stable} \
-  --peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9654 --listen-http 0.0.0.0:9664
-
-# oc_erchef
-
-# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
-# if it exists, you'll need to account for its removal in order to start the services
-echo "Removing any stale LOCK files for oc_erchef"
-sudo rm -f "${DATA_MOUNT:-/mnt/hab}/oc_erchef_sup/default/LOCK"
-sudo -E docker run --rm -it \
-  --name="oc_erchef" \
-  --env="HAB_OC_ERCHEF=[data_collector]
+declare -A oc_erchef
+oc_erchef["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_erchef:${CHEF_SERVER_VERSION:-stable}"
+oc_erchef["env"]="HAB_OC_ERCHEF=[data_collector]
 enabled = ${AUTOMATE_ENABLED:-false}
 server = \"${AUTOMATE_SERVER:-localhost}\"
 port = 443
@@ -189,39 +94,77 @@ keygen_cache_workers = 2
 keygen_cache_size = 10
 keygen_start_size = 0
 keygen_timeout = 20000
-" \
-  --env="PATH=/bin" \
-  --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
-  --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
-  --volume ${DATA_MOUNT:-/mnt/hab}/oc_erchef_svc:/hab/svc \
-  --volume ${DATA_MOUNT:-/mnt/hab}/oc_erchef_sup:/hab/sup \
-  --cap-drop="NET_BIND_SERVICE" \
-  --cap-drop="SETUID" \
-  --cap-drop="SETGID" \
-  --user="${USER_ID:-42}:${GROUP_ID:-42}" \
-  --network=host \
-  --detach=true \
-  ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_erchef:${CHEF_SERVER_VERSION:-stable} \
-  --peer ${HOST_IP:-172.17.0.1} --bind bookshelf:bookshelf.default --bind oc_bifrost:oc_bifrost.default --bind database:postgresql.default --bind elasticsearch:elasticsearch5.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9655 --listen-http 0.0.0.0:9665
+"
+oc_erchef["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind bookshelf:bookshelf.default --bind oc_bifrost:oc_bifrost.default --bind database:postgresql.default --bind elasticsearch:elasticsearch5.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9655 --listen-http 0.0.0.0:9665"
 
-# chef-server-nginx
+declare -A chef_server_nginx
+chef_server_nginx["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/chef-server-nginx:${CHEF_SERVER_VERSION:-stable}"
+chef_server_nginx["env"]=""
+chef_server_nginx["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind oc_erchef:oc_erchef.default --bind oc_bifrost:oc_bifrost.default --bind oc_id:oc_id.default --bind bookshelf:bookshelf.default --bind elasticsearch:elasticsearch5.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9656 --listen-http 0.0.0.0:9666"
 
-# NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
-# if it exists, you'll need to account for its removal in order to start the services
-echo "Removing any stale LOCK files for chef-server-nginx"
-sudo rm -f "${DATA_MOUNT:-/mnt/hab}/chef-server-nginx_sup/default/LOCK"
-sudo -E docker run --rm -it \
-  --name="chef-server-nginx" \
-  --env="PATH=/bin" \
-  --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
-  --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
-  --volume ${DATA_MOUNT:-/mnt/hab}/chef-server-nginx_svc:/hab/svc \
-  --volume ${DATA_MOUNT:-/mnt/hab}/chef-server-nginx_sup:/hab/sup \
-  --cap-drop="NET_BIND_SERVICE" \
-  --cap-drop="SETUID" \
-  --cap-drop="SETGID" \
-  --user="${USER_ID:-42}:${GROUP_ID:-42}" \
-  --network=host \
-  --detach=true \
-  ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/chef-server-nginx:${CHEF_SERVER_VERSION:-stable} \
-  --peer ${HOST_IP:-172.17.0.1} --bind oc_erchef:oc_erchef.default --bind oc_bifrost:oc_bifrost.default --bind oc_id:oc_id.default --bind bookshelf:bookshelf.default --bind elasticsearch:elasticsearch5.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9656 --listen-http 0.0.0.0:9666
+stop_svc () {
+  echo "Stopping $1"
+  docker stop $1 >/dev/null 2>&1 || true
+}
+
+stop_all () {
+  echo "Stopping ALL.."
+  docker stop $(docker ps -aq) >/dev/null 2>&1 || true
+  echo "Removing ${DATA_MOUNT:-/mnt/hab}/*_sup"
+  rm -rf ${DATA_MOUNT:-/mnt/hab}/*_sup
+}
+
+start_all () {
+  docker_svc_start "postgresql" "${postgresql[image]}" "${postgresql[supargs]}" "${postgresql[env]}"
+  docker_svc_start "chef-server-ctl" "${chef_server_ctl[image]}" "${chef_server_ctl[supargs]}" "${chef_server_ctl[env]}"
+  docker_svc_start "elasticsearch" "${elasticsearch[image]}" "${elasticsearch[supargs]}" "${elasticsearch[env]}"
+  docker_svc_start "oc_id" "${oc_id[image]}" "${oc_id[supargs]}" "${oc_id[env]}"
+  docker_svc_start "bookshelf" "${bookshelf[image]}" "${bookshelf[supargs]}" "${bookshelf[env]}"
+  docker_svc_start "oc_bifrost" "${oc_bifrost[image]}" "${oc_bifrost[supargs]}" "${oc_bifrost[env]}"
+  docker_svc_start "oc_erchef" "${oc_erchef[image]}" "${oc_erchef[supargs]}" "${oc_erchef[env]}"
+  docker_svc_start "chef-server-nginx" "${chef_server_nginx[image]}" "${chef_server_nginx[supargs]}" "${chef_server_nginx[env]}"
+}
+
+case "$1" in
+  stop)
+    case "$2" in
+      "")
+        stop_all
+        ;;
+      *)
+        stop_svc $2
+        ;;
+    esac
+    ;;
+  start)
+    case "$2" in
+      "")
+        start_all
+        ;;
+      postgresql)
+        docker_svc_start "postgresql" "${postgresql[image]}" "${postgresql[supargs]}" "${postgresql[env]}"
+        ;;
+      chef-server-ctl)
+        docker_svc_start "chef-server-ctl" "${chef_server_ctl[image]}" "${chef_server_ctl[supargs]}" "${chef_server_ctl[env]}"
+        ;;
+      elasticsearch)
+        docker_svc_start "elasticsearch" "${elasticsearch[image]}" "${elasticsearch[supargs]}" "${elasticsearch[env]}"
+        ;;
+      oc_id)
+        docker_svc_start "oc_id" "${oc_id[image]}" "${oc_id[supargs]}" "${oc_id[env]}"
+        ;;
+      bookshelf)
+        docker_svc_start "bookshelf" "${bookshelf[image]}" "${bookshelf[supargs]}" "${bookshelf[env]}"
+        ;;
+      oc_bifrost)
+        docker_svc_start "oc_bifrost" "${oc_bifrost[image]}" "${oc_bifrost[supargs]}" "${oc_bifrost[env]}"
+        ;;
+      oc_erchef)
+        docker_svc_start "oc_erchef" "${oc_erchef[image]}" "${oc_erchef[supargs]}" "${oc_erchef[env]}"
+        ;;
+      chef-server-nginx)
+        docker_svc_start "chef-server-nginx" "${chef_server_nginx[image]}" "${chef_server_nginx[supargs]}" "${chef_server_nginx[env]}"
+        ;;
+    esac
+  ;;
+esac

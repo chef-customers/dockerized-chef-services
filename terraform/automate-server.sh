@@ -12,21 +12,21 @@
 # DATA_MOUNT - the mount point for the data
 
 
-if [ -f "env.sh" ]; then
+MYDIR="$(dirname "$(which "$0")")"
+if [ -f "${MYDIR}/env.sh" ]; then
  echo "Setting ENVIRONMENT variables"
- . ./env.sh
+ . $MYDIR/env.sh
 fi
 
 for svc in postgresql rabbitmq elasticsearch logstash workflow-server notifications compliance automate-nginx maintenance; do
   # NOTE: If launching all the services at once from a down state, then clearing out `/hab/sup` ensures
   # a clean slate so that the ring can be established. This guarantees ring recovery when things go sideways..
   # Do not do this for (re-)starting individual services as it will lead to exclusion of the service from the ring.
-  sudo rm -rf "${DATA_MOUNT:-/mnt/hab}/${svc}_sup"
+  rm -rf "${DATA_MOUNT:-/mnt/hab}/${svc}_sup"
 
   dirs="${DATA_MOUNT:-/mnt/hab}/${svc}_svc ${DATA_MOUNT:-/mnt/hab}/${svc}_sup"
   echo "Ensuring $svc directories exist ($dirs)"
-  sudo mkdir -p $dirs
-  sudo chown -R $USER_ID:$GROUP_ID $dirs
+  mkdir -p $dirs
 done
 
 # postgresql
@@ -34,8 +34,8 @@ done
 # NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
 # if it exists, you'll need to account for its removal in order to start the services
 echo "Removing any stale LOCK files for postgresql"
-sudo rm -f "${DATA_MOUNT:-/mnt/hab}/postgresql_sup/default/LOCK"
-sudo -E docker run --rm -it \
+rm -f "${DATA_MOUNT:-/mnt/hab}/postgresql_sup/default/LOCK"
+docker run --rm -it \
   --name="postgresql" \
   --env="HAB_POSTGRESQL=[superuser]
 name = 'hab'
@@ -60,8 +60,8 @@ password = 'chefrocks'
 # NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
 # if it exists, you'll need to account for its removal in order to start the services
 echo "Removing any stale LOCK files for rabbitmq"
-sudo rm -f "${DATA_MOUNT:-/mnt/hab}/rabbitmq_sup/default/LOCK"
-sudo -E docker run --rm -it \
+rm -f "${DATA_MOUNT:-/mnt/hab}/rabbitmq_sup/default/LOCK"
+docker run --rm -it \
   --name="rabbitmq" \
   --env="HAB_RABBITMQ=[rabbitmq]
 default_vhost = '/insights'
@@ -90,8 +90,8 @@ enabled = true
 # NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
 # if it exists, you'll need to account for its removal in order to start the services
 echo "Removing any stale LOCK files for elasticsearch"
-sudo rm -f "${DATA_MOUNT:-/mnt/hab}/elasticsearch_sup/default/LOCK"
-sudo -E docker run --rm -it \
+rm -f "${DATA_MOUNT:-/mnt/hab}/elasticsearch_sup/default/LOCK"
+docker run --rm -it \
   --name="elasticsearch" \
   --env="PATH=/bin" \
   --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
@@ -113,8 +113,8 @@ sudo -E docker run --rm -it \
 # NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
 # if it exists, you'll need to account for its removal in order to start the services
 echo "Removing any stale LOCK files for logstash"
-sudo rm -f "${DATA_MOUNT:-/mnt/hab}/logstash_sup/default/LOCK"
-sudo -E docker run --rm -it \
+rm -f "${DATA_MOUNT:-/mnt/hab}/logstash_sup/default/LOCK"
+docker run --rm -it \
   --name="logstash" \
   --env="PATH=/bin" \
   --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
@@ -135,8 +135,8 @@ sudo -E docker run --rm -it \
 # NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
 # if it exists, you'll need to account for its removal in order to start the services
 echo "Removing any stale LOCK files for workflow-server"
-sudo rm -f "${DATA_MOUNT:-/mnt/hab}/workflow-server_sup/default/LOCK"
-sudo -E docker run --rm -it \
+rm -f "${DATA_MOUNT:-/mnt/hab}/workflow-server_sup/default/LOCK"
+docker run --rm -it \
   --name="workflow-server" \
   --env="HAB_WORKFLOW_SERVER=
 enterprise = \"${ENTERPRISE:-default}\"
@@ -166,8 +166,8 @@ accept = true
 # NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
 # if it exists, you'll need to account for its removal in order to start the services
 echo "Removing any stale LOCK files for workflow-server"
-sudo rm -f "${DATA_MOUNT:-/mnt/hab}/workflow-server_sup/default/LOCK"
-sudo -E docker run --rm -it \
+rm -f "${DATA_MOUNT:-/mnt/hab}/workflow-server_sup/default/LOCK"
+docker run --rm -it \
   --name="notifications" \
   --env="PATH=/bin" \
   --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
@@ -188,8 +188,8 @@ sudo -E docker run --rm -it \
 # NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
 # if it exists, you'll need to account for its removal in order to start the services
 echo "Removing any stale LOCK files for compliance"
-sudo rm -f "${DATA_MOUNT:-/mnt/hab}/compliance_sup/default/LOCK"
-sudo -E docker run --rm -it \
+rm -f "${DATA_MOUNT:-/mnt/hab}/compliance_sup/default/LOCK"
+docker run --rm -it \
   --name="compliance" \
   --env="HAB_COMPLIANCE_SERVICE=[service]
 host = \"0.0.0.0\"
@@ -215,8 +215,8 @@ secrets_key = \"12345678901234567890123456789012\"
 # NOTE: The Supervisor won't start if /hab/sup/default/LOCK exists
 # if it exists, you'll need to account for its removal in order to start the services
 echo "Removing any stale LOCK files for automate-nginx"
-sudo rm -f "${DATA_MOUNT:-/mnt/hab}/automate-nginx_sup/default/LOCK"
-sudo -E docker run --rm -it \
+rm -f "${DATA_MOUNT:-/mnt/hab}/automate-nginx_sup/default/LOCK"
+docker run --rm -it \
   --name="automate-nginx" \
   --env="HAB_AUTOMATE_NGINX=
 port = ${PILOT_HTTP_PORT:-8080}
