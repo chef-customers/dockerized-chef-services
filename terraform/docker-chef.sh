@@ -212,8 +212,8 @@ docker_svc_start () {
   dirs="${DATA_MOUNT:-/mnt/hab}/${1}_svc ${DATA_MOUNT:-/mnt/hab}/${1}_sup"
   echo "Ensuring $dirs directories exist and removing stale LOCK files"
   mkdir -p $dirs
-  $(sudo_cmd) rm -f ${DATA_MOUNT:-/mnt/hab}/${1}_sup/default/LOCK
-  docker run --rm -it \
+  rm -f ${DATA_MOUNT:-/mnt/hab}/${1}_sup/default/LOCK
+  $(sudo_cmd) docker run --rm -it \
     --name="${1}" \
     --env="${!env:-ILOVECHEF=1}" \
     --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
