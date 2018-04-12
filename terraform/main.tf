@@ -17,7 +17,7 @@ variable "aws_subnet" { default = "subnet-7424b611" }
 variable "default_security_group" { default = "sg-c9beb2ac" }
 variable "aws_ami_user" { default = "centos" }
 variable "aws_ami_id" { default = "" }  # leave blank to auto-select the latest highperf CentOS 7 image
-variable "aws_instance_names" { default = ["automate-server", "chef-server"] }
+variable "aws_instance_names" { default = ["automate", "chef-server"] }
 variable "aws_instance_types" { default = ["m4.2xlarge", "m4.xlarge"] } # Automate, Chef Server
 
 # chef services - also ok to leave as default
@@ -159,8 +159,8 @@ resource "null_resource" "provision_cluster" {
   }
 
   provisioner "file" {
-    source      = "${path.module}/${element(var.aws_instance_names, count.index)}.sh"
-    destination = "/home/${var.container_username}/${element(var.aws_instance_names, count.index)}.sh"
+    source      = "${path.module}/docker-chef.sh"
+    destination = "/home/${var.container_username}/docker-chef.sh"
   }
 
   provisioner "file" {
@@ -179,7 +179,7 @@ resource "null_resource" "provision_cluster" {
       "sudo sed -i 's/AUTOMATE_SERVER_IP_VALUE/${aws_instance.automate_cluster.*.private_ip[0]}/' /home/${var.container_username}/env.sh",
       "sudo chown -R ${var.container_uid}:${var.container_gid} ${var.container_data_mount}",
       "sudo chown -R ${var.container_uid}:${var.container_gid} /home/${var.container_username}",
-      "sudo -Hu ${var.container_username} /home/${var.container_username}/${element(var.aws_instance_names, count.index)}.sh start"
+      "sudo -Hu ${var.container_username} /home/${var.container_username}/docker-chef.sh ${element(var.aws_instance_names, count.index)} start"
     ]
   }
 }
