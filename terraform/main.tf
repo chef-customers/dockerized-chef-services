@@ -8,6 +8,7 @@ variable "aws_key_pair_file" { }
 variable "tag_dept" { }
 variable "tag_contact" { }
 variable "automate_admin_password" { }
+variable "docker_requires_sudo" { }
 
 # General AWS variables - likely ok to leave as default
 variable "aws_region" { default = "us-west-2" }
@@ -17,7 +18,7 @@ variable "aws_subnet" { default = "subnet-7424b611" }
 variable "default_security_group" { default = "sg-c9beb2ac" }
 variable "aws_ami_user" { default = "centos" }
 variable "aws_ami_id" { default = "" }  # leave blank to auto-select the latest highperf CentOS 7 image
-variable "aws_instance_names" { default = ["automate-server", "chef-server"] }
+variable "aws_instance_names" { default = ["automate", "chef-server"] }
 variable "aws_instance_types" { default = ["m4.2xlarge", "m4.xlarge"] } # Automate, Chef Server
 
 # chef services - also ok to leave as default
@@ -67,6 +68,7 @@ data "template_file" "env_sh" {
     chef_server_version = "${var.chef_server_version}"
     automate_docker_origin = "${var.automate_docker_origin}"
     automate_version = "${var.automate_version}"
+    docker_requires_sudo = "${var.docker_requires_sudo}"
   }
 }
 
@@ -137,42 +139,49 @@ resource "null_resource" "provision_cluster" {
   }
 
   provisioner "file" {
-    content     = "${data.template_file.env_sh.rendered}"
-    destination = "/home/${var.aws_ami_user}/env.sh"
-  }
-
-  provisioner "file" {
-    source      = "${path.module}/${element(var.aws_instance_names, count.index)}.sh"
-    destination = "/home/${var.aws_ami_user}/${element(var.aws_instance_names, count.index)}.sh"
-  }
-
-  provisioner "file" {
-    content     = "${data.template_file.group.rendered}"
-    destination = "/home/${var.aws_ami_user}/group"
-  }
-
-  provisioner "file" {
-    content     = "${data.template_file.passwd.rendered}"
-    destination = "/home/${var.aws_ami_user}/passwd"
-  }
-
-  provisioner "file" {
     source      = "${path.module}/setup.sh"
     destination = "/home/${var.aws_ami_user}/setup.sh"
   }
 
   provisioner "remote-exec" {
     inline = [
-      "sudo groupadd -g ${var.container_gid} ${var.container_username}",
-      "sudo adduser -u ${var.container_uid} -g ${var.container_gid} -m ${var.container_username}",
-      "sudo sed -i 's/AUTOMATE_SERVER_IP_VALUE/${aws_instance.automate_cluster.*.private_ip[0]}/' /home/${var.aws_ami_user}/env.sh",
-      "sudo mkdir -p ${var.container_data_mount}",
-      "sudo cp -f /home/${var.aws_ami_user}/group ${var.container_data_mount}",
-      "sudo cp -f /home/${var.aws_ami_user}/passwd ${var.container_data_mount}",
-      "sudo chown -R ${var.container_uid}:${var.container_gid} ${var.container_data_mount}",
-      "sudo chmod u+x /home/${var.aws_ami_user}/*sh",
+      "sudo chmod a+x /home/${var.aws_ami_user}/setup.sh",
       "sudo /home/${var.aws_ami_user}/setup.sh",
-      "/home/${var.aws_ami_user}/${element(var.aws_instance_names, count.index)}.sh start"
+      "sudo groupadd -g ${var.container_gid} ${var.container_username}",
+      "sudo adduser -u ${var.container_uid} -g ${var.container_gid} -G docker -m ${var.container_username}",
+      "sudo chmod 777 /home/${var.container_username}",
+      "sudo mkdir -p ${var.container_data_mount}",
+      "sudo chmod 777 ${var.container_data_mount}"
+    ]
+  }
+
+  provisioner "file" {
+    content     = "${data.template_file.env_sh.rendered}"
+    destination = "/home/${var.container_username}/env.sh"
+  }
+
+  provisioner "file" {
+    source      = "${path.module}/docker-chef.sh"
+    destination = "/home/${var.container_username}/docker-chef.sh"
+  }
+
+  provisioner "file" {
+    content     = "${data.template_file.group.rendered}"
+    destination = "${var.container_data_mount}/group"
+  }
+
+  provisioner "file" {
+    content     = "${data.template_file.passwd.rendered}"
+    destination = "${var.container_data_mount}/passwd"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo chmod a+x /home/${var.container_username}/*sh",
+      "sudo sed -i 's/AUTOMATE_SERVER_IP_VALUE/${aws_instance.automate_cluster.*.private_ip[0]}/' /home/${var.container_username}/env.sh",
+      "sudo chown -R ${var.container_uid}:${var.container_gid} ${var.container_data_mount}",
+      "sudo chown -R ${var.container_uid}:${var.container_gid} /home/${var.container_username}",
+      "sudo -Hu ${var.container_username} /home/${var.container_username}/docker-chef.sh -s ${element(var.aws_instance_names, count.index)} -a start"
     ]
   }
 }
