@@ -141,30 +141,14 @@ case "$1" in
       "")
         start_all
         ;;
-      postgresql)
-        docker_svc_start "postgresql" "${postgresql[image]}" "${postgresql[supargs]}" "${postgresql[env]}"
-        ;;
-      chef-server-ctl)
-        docker_svc_start "chef-server-ctl" "${chef_server_ctl[image]}" "${chef_server_ctl[supargs]}" "${chef_server_ctl[env]}"
-        ;;
-      elasticsearch)
-        docker_svc_start "elasticsearch" "${elasticsearch[image]}" "${elasticsearch[supargs]}" "${elasticsearch[env]}"
-        ;;
-      oc_id)
-        docker_svc_start "oc_id" "${oc_id[image]}" "${oc_id[supargs]}" "${oc_id[env]}"
-        ;;
-      bookshelf)
-        docker_svc_start "bookshelf" "${bookshelf[image]}" "${bookshelf[supargs]}" "${bookshelf[env]}"
-        ;;
-      oc_bifrost)
-        docker_svc_start "oc_bifrost" "${oc_bifrost[image]}" "${oc_bifrost[supargs]}" "${oc_bifrost[env]}"
-        ;;
-      oc_erchef)
-        docker_svc_start "oc_erchef" "${oc_erchef[image]}" "${oc_erchef[supargs]}" "${oc_erchef[env]}"
-        ;;
-      chef-server-nginx)
-        docker_svc_start "chef-server-nginx" "${chef_server_nginx[image]}" "${chef_server_nginx[supargs]}" "${chef_server_nginx[env]}"
-        ;;
+      *)
+      # https://stackoverflow.com/questions/39297530/bash-use-variable-as-name-of-associative-array-when-calling-value
+      svc=$(echo $2|tr '-' '_')
+      image=$svc[image]
+      supargs=$svc[supargs]
+      env=$svc[env]
+      docker_svc_start "$2" "${!image}" "${!supargs}" "${!env}"
+      ;;
     esac
   ;;
 esac
