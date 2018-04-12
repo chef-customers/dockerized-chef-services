@@ -3,6 +3,9 @@ Docker definitions for Chef Server and Automate 1.x
 
 ![Architecture Diagram](https://www.lucidchart.com/publicSegments/view/4f01dc86-c34a-49a9-b619-f3d1056e7a41/image.png)
 
+## Release Notes
+Please read the release notes [here](https://github.com/chef-customers/dockerized-chef-services/blob/master/RELEASE_NOTES.md) for any notable changes.
+
 ## How it works
 
 * All of the Chef Server and Chef Automate services have been packaged as Habitat `.hart` files
@@ -86,32 +89,6 @@ chef-dev-ux:x:8888:
 Example `passwd`
 
 ```
-root:x:0:
-bin:x:1:daemon
-sys:x:2:
-kmem:x:3:
-tape:x:4:
-tty:x:5:
-daemon:x:6:
-floppy:x:7:
-disk:x:8:
-lp:x:9:
-dialout:x:10:
-audio:x:11:
-video:x:12:
-utmp:x:13:
-usb:x:14:
-cdrom:x:15:
-adm:x:16:
-messagebus:x:18:
-systemd-journal:x:23:
-input:x:24:
-mail:x:34:
-nogroup:x:99:
-users:x:999:
-hab:x:42:hab:
-chef-dev-ux:x:8888:
-[chef-dev-ux@ip-172-31-22-214 ~]$ cat /mnt/data/passwd
 root:x:0:0:root:/root:/bin/sh
 bin:x:1:1:bin:/dev/null:/bin/false
 daemon:x:6:6:Daemon User:/dev/null:/bin/false
@@ -119,7 +96,6 @@ nobody:x:99:99:Unprivileged User:/dev/null:/bin/false
 hab:x:42:42:hab User:/:/bin/false
 chef-dev-ux:x:9999:8888:Test User:/:/bin/false
 ```
-
 
 Example `env.sh`:
 
@@ -203,7 +179,13 @@ sudo iptables -A PREROUTING -t nat -p tcp --dport 443 -j REDIRECT --to-port 8443
 
 # Operating it
 
-## Chef Server administrative functions
+## Starting | Stopping
+
+For this use the `docker-chef.sh` script as shown above.
+
+## Administrative Functions
+
+### Chef Server
 
 Run the functional test suite to ensure Chef server is working:
 
@@ -218,6 +200,10 @@ docker run:
 ```
 docker exec -it chef-server-ctl chef-server-ctl (subcommands)
 ```
+
+### Chef Automate
+
+Coming Soon! We will be releasing an `automat-ctl` command in the `workflow-server` container.
 
 ## Logging
 All container logs are directed to STDOUT. You should employ a Docker logging mechanism to ensure those logs are captured and aggregated in a central location. Being able to provide full logs from all containers is necessary in order to recieve support.
