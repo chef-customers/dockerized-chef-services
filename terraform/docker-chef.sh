@@ -238,7 +238,21 @@ stop_svc () {
 
 stop_all () {
   echo "Stopping ALL.."
-  $(sudo_cmd) docker stop $($(sudo_cmd) docker ps -aq) >/dev/null 2>&1 || true
+  case "$1" in
+    chef-server)
+      for svc in postgresql chef-server-ctl elasticsearch oc_id bookshelf oc_bifrost oc_erchef chef-server-nginx; do
+        stop_svc "$svc"
+      done
+      ;;
+    automate)
+      for svc in postgresql rabbitmq elasticsearch logstash workflow-server notifications compliance automate-nginx; do
+        stop_svc "$svc"
+      done
+      ;;
+    *)
+      echo "not implemented"
+      ;;
+  esac
   echo "Removing ${DATA_MOUNT:-/mnt/hab}/*_sup"
   rm -rf ${DATA_MOUNT:-/mnt/hab}/*_sup
 }
@@ -273,7 +287,7 @@ case "$SERVICE_TYPE" in
         case "$SERVICE_NAME" in
           # optional service name
           "")
-            stop_all
+            stop_all "$SERVICE_TYPE"
             ;;
           *)
             stop_svc "$SERVICE_NAME"
