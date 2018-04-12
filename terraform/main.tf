@@ -8,6 +8,7 @@ variable "aws_key_pair_file" { }
 variable "tag_dept" { }
 variable "tag_contact" { }
 variable "automate_admin_password" { }
+variable "docker_requires_sudo" { }
 
 # General AWS variables - likely ok to leave as default
 variable "aws_region" { default = "us-west-2" }
@@ -67,6 +68,7 @@ data "template_file" "env_sh" {
     chef_server_version = "${var.chef_server_version}"
     automate_docker_origin = "${var.automate_docker_origin}"
     automate_version = "${var.automate_version}"
+    docker_requires_sudo = "${var.docker_requires_sudo}"
   }
 }
 
@@ -179,7 +181,7 @@ resource "null_resource" "provision_cluster" {
       "sudo sed -i 's/AUTOMATE_SERVER_IP_VALUE/${aws_instance.automate_cluster.*.private_ip[0]}/' /home/${var.container_username}/env.sh",
       "sudo chown -R ${var.container_uid}:${var.container_gid} ${var.container_data_mount}",
       "sudo chown -R ${var.container_uid}:${var.container_gid} /home/${var.container_username}",
-      "sudo -Hu ${var.container_username} /home/${var.container_username}/docker-chef.sh ${element(var.aws_instance_names, count.index)} start"
+      "sudo -Hu ${var.container_username} /home/${var.container_username}/docker-chef.sh -s ${element(var.aws_instance_names, count.index)} -a start"
     ]
   }
 }

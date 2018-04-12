@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Configurable shell environment variables:
+#
 # CHEF_SERVER_DOCKER_ORIGIN - denotes the docker origin (dockerhub ID) or default to `chefserverofficial`
 # AUTOMATE_DOCKER_ORIGIN - denotes the docker origin (dockerhub ID) or default to `chefdemo`
 # CHEF_SERVER_VERSION -  the version identifier tag on the Chef Server packages
@@ -14,25 +15,63 @@
 # DATA_MOUNT - the mount point for the data
 # USER_ID - the user ID to use (numeric)
 # GROUP_ID - the group ID to use (numeric)
+# DOCKER_REQUIRES_SUDO - [true|false] whether or not docker requires sudo to run when invoked by the user running this script
 
 # The above variables should all be set in a file named env.sh that lives beside this script.
-
 THISDIR="$(dirname "$(which "$0")")"
 if [ -f "${THISDIR}/env.sh" ]; then
- echo "Setting ENVIRONMENT variables"
- . $THISDIR/env.sh
+ . "${THISDIR}/env.sh"
 fi
 
-usage () {
-  echo "Usage: $0 [<automate|chef-server>] [<start|stop>] [<optional container name string>]"
-  echo "Examples:"
-  echo "  $0 chef-server start        # This will start all Chef Server services"
-  echo "  $0 chef-server stop         # This will stop all Chef Server services"
-  echo "  $0 automate start logstash  # This will start the Automate logstash service"
-  echo "  $0 automate stop postgresql # This will stop the Automate postgresql service"
+banner="This is a control script for starting|stopping Chef Server and Chef Automate docker services.
 
+You must specify the following options:
+ -s [automate|chef-server]           REQUIRED: Services type: Chef Server or Chef Automate
+ -a [stop|start]                     REQUIRED: Action type: start or stop services
+ -n [container name]                 OPTIONAL: The docker container name. Leaving blank implies ALL
+ -h                                  OPTIONAL: Print this help message
+
+ ex. $0 -s chef-server -a start            # starts up all Chef Server services
+ ex. $0 -s automate -a stop -n logstash    # stops Automate's logstash service
+
+"
+
+usage () {
+  echo "$banner"
   exit 1
 }
+
+if [ $# -eq 0 ]; then
+  usage
+fi
+
+while getopts "s:a:n:h" opt; do
+  case $opt in
+    s)
+      echo "Service type: $OPTARG"
+      export SERVICE_TYPE=$OPTARG
+      ;;
+    a)
+      echo "Service action: $OPTARG"
+      export SERVICE_ACTION=$OPTARG
+      ;;
+    n)
+      echo "Service name: $OPTARG"
+      export SERVICE_NAME=$OPTARG
+      ;;
+    h)
+      usage
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      exit 1
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      exit 1
+      ;;
+  esac
+done
 
 # Service Definitinons
 #
@@ -56,7 +95,7 @@ declare -A chef_server_ctl
 chef_server_ctl["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/chef-server-ctl:${CHEF_SERVER_VERSION:-stable}"
 chef_server_ctl["env"]="HAB_CHEF_SERVER_CTL=[chef_server_api]
 ip = \"${HOST_IP:-172.17.0.1}\"
-ssl_port = "8443"
+ssl_port = \"8443\"
 [secrets.data_collector]
 token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506}\"
 "
@@ -154,18 +193,26 @@ automate_nginx["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind compliance:compl
 # Service functions
 #
 
+sudo_cmd () {
+  if [ "$DOCKER_REQUIRES_SUDO" == "true" ]; then
+    echo "sudo -E "
+  else
+    echo ""
+  fi
+}
+
 docker_svc_start () {
   # https://stackoverflow.com/questions/39297530/bash-use-variable-as-name-of-associative-array-when-calling-value
-  svc=$(echo $1|tr '-' '_')
-  image=$svc[image]
-  supargs=$svc[supargs]
-  env=$svc[env]
+  svc=$(echo "$1"|tr '-' '_')
+  image="$svc[image]"
+  supargs="$svc[supargs]"
+  env="$svc[env]"
 
-  echo "Starting $1"
+  echo "Starting ${!image}"
   dirs="${DATA_MOUNT:-/mnt/hab}/${1}_svc ${DATA_MOUNT:-/mnt/hab}/${1}_sup"
   echo "Ensuring $dirs directories exist and removing stale LOCK files"
   mkdir -p $dirs
-  rm -f ${DATA_MOUNT:-/mnt/hab}/${1}_sup/default/LOCK
+  $(sudo_cmd) rm -f ${DATA_MOUNT:-/mnt/hab}/${1}_sup/default/LOCK
   docker run --rm -it \
     --name="${1}" \
     --env="${!env:-ILOVECHEF=1}" \
@@ -186,12 +233,12 @@ docker_svc_start () {
 
 stop_svc () {
   echo "Stopping $1"
-  docker stop $1 >/dev/null 2>&1 || true
+  $(sudo_cmd) docker stop "$1" >/dev/null 2>&1 || true
 }
 
 stop_all () {
   echo "Stopping ALL.."
-  docker stop $(docker ps -aq) >/dev/null 2>&1 || true
+  $(sudo_cmd) docker stop $($(sudo_cmd) docker ps -aq) >/dev/null 2>&1 || true
   echo "Removing ${DATA_MOUNT:-/mnt/hab}/*_sup"
   rm -rf ${DATA_MOUNT:-/mnt/hab}/*_sup
 }
@@ -214,33 +261,33 @@ start_all () {
   esac
 }
 
-case "$1" in
+case "$SERVICE_TYPE" in
   # chef-server or automate
   "")
      usage
      ;;
   automate|chef-server)
     # start or stop
-    case "$2" in
+    case "$SERVICE_ACTION" in
       stop)
-        case "$3" in
+        case "$SERVICE_NAME" in
           # optional service name
           "")
             stop_all
             ;;
           *)
-            stop_svc $3
+            stop_svc "$SERVICE_NAME"
             ;;
         esac
         ;;
       start)
-        case "$3" in
+        case "$SERVICE_NAME" in
           # optional service name
           "")
-            start_all $1
+            start_all "$SERVICE_TYPE"
             ;;
           *)
-          docker_svc_start "$3"
+          docker_svc_start "$SERVICE_NAME"
           ;;
         esac
         ;;

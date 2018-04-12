@@ -8,7 +8,7 @@ Docker definitions for Chef Server and Automate 1.x
 * All of the Chef Server and Chef Automate services have been packaged as Habitat `.hart` files
 * The hab packages have been exported to docker containers and published to docker hub
 * These containers support running under a random, arbitrary effective user and/or group id
-* Launch containers via the included [Chef Server](https://github.com/chef-customers/dockerized-chef-services/tree/master/terraform/chef-server.sh) or [Automate Server](https://github.com/chef-customers/dockerized-chef-services/tree/master/terraform/automate-server.sh) scripts, or alternatively via `docker run ..`
+* Launch containers via the included [docker-chef.sh](https://github.com/chef-customers/dockerized-chef-services/tree/master/terraform/docker-chef.sh) script.
 * Each host forms its own non-permanent Habitat gossip ring, sharing service discovery data intra-host only
 * Environment variables are used to configure settings from the default
 
@@ -16,7 +16,8 @@ Docker definitions for Chef Server and Automate 1.x
 
 ### Using AWS and Terraform
 
-Customize the `terraform.tfvars.example` [Terraform](https://terraform.io) configuration file, rename it to `terraform.tfvars` and deploy with `terraform apply`
+* Customize the `terraform.tfvars.example` [Terraform](https://terraform.io) configuration file, rename it to `terraform.tfvars` and deploy with `terraform apply`
+* Sit back and enjoy - in about 4 minutes you'll have a cluster up and running
 
 ```bash
 git clone https://github.com/chef-customers/dockerized-chef-services.git
@@ -25,6 +26,131 @@ cp terraform.tfvars.example terraform.tfvars
 vi terraform.tfvars # change anything that needs customization
 terraform init
 terraform apply
+```
+
+### Manual
+
+* Provision two hosts as depicted in the Architecture diagram above and ensure the items from [Deployment notes](https://github.com/chef-customers/dockerized-chef-services#deployment-notes)
+* Copy `docker-run.sh` to each host
+* Create a customized `env.sh` and place in the same directory as `docker-run.sh`
+* Create the `$DATA_MOUNT` mount point on each host and ensure that it's owned by `$USER_ID:$GROUP_ID`
+* Copy a `passwd` and `group` file (see examples below) into `$DATA_MOUNT` and ensure they're readable by `$USER_ID:$GROUP_ID`
+* Run `docker-run.sh -h` to see the help menu
+
+```
+$ ./docker-chef.sh -h
+This is a control script for starting|stopping Chef Server and Chef Automate docker services.
+
+You must specify the following options:
+ -s [automate|chef-server]           REQUIRED: Services type: Chef Server or Chef Automate
+ -a [stop|start]                     REQUIRED: Action type: start or stop services
+ -n [container name]                 OPTIONAL: The docker container name. Leaving blank implies ALL
+ -h                                  OPTIONAL: Print this help message
+
+ ex. ./docker-chef.sh -s chef-server -a start            # starts up all Chef Server services
+ ex. ./docker-chef.sh -s automate -a stop -n logstash    # stops Automate's logstash service
+
+$
+```
+
+Example `group`
+
+```
+root:x:0:
+bin:x:1:daemon
+sys:x:2:
+kmem:x:3:
+tape:x:4:
+tty:x:5:
+daemon:x:6:
+floppy:x:7:
+disk:x:8:
+lp:x:9:
+dialout:x:10:
+audio:x:11:
+video:x:12:
+utmp:x:13:
+usb:x:14:
+cdrom:x:15:
+adm:x:16:
+messagebus:x:18:
+systemd-journal:x:23:
+input:x:24:
+mail:x:34:
+nogroup:x:99:
+users:x:999:
+hab:x:42:hab:
+chef-dev-ux:x:8888:
+```
+
+Example `passwd`
+
+```
+root:x:0:
+bin:x:1:daemon
+sys:x:2:
+kmem:x:3:
+tape:x:4:
+tty:x:5:
+daemon:x:6:
+floppy:x:7:
+disk:x:8:
+lp:x:9:
+dialout:x:10:
+audio:x:11:
+video:x:12:
+utmp:x:13:
+usb:x:14:
+cdrom:x:15:
+adm:x:16:
+messagebus:x:18:
+systemd-journal:x:23:
+input:x:24:
+mail:x:34:
+nogroup:x:99:
+users:x:999:
+hab:x:42:hab:
+chef-dev-ux:x:8888:
+[chef-dev-ux@ip-172-31-22-214 ~]$ cat /mnt/data/passwd
+root:x:0:0:root:/root:/bin/sh
+bin:x:1:1:bin:/dev/null:/bin/false
+daemon:x:6:6:Daemon User:/dev/null:/bin/false
+nobody:x:99:99:Unprivileged User:/dev/null:/bin/false
+hab:x:42:42:hab User:/:/bin/false
+chef-dev-ux:x:9999:8888:Test User:/:/bin/false
+```
+
+
+Example `env.sh`:
+
+```bash
+#!/bin/bash
+
+export LC_ALL=en_US.UTF-8
+
+export USER_ID=9999
+export GROUP_ID=8888
+export DATA_MOUNT=/mnt/data
+export ENTERPRISE=brewinc
+export ADMIN_PASSWORD=insecurepassword
+export HOST_IP=$(hostname --ip-address)
+export AUTOMATE_ENABLED=true
+export AUTOMATE_SERVER=172.31.20.110
+export AUTOMATE_TOKEN=93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506
+export CHEF_SERVER_DOCKER_ORIGIN=chefserverofficial
+export CHEF_SERVER_VERSION=stable
+export AUTOMATE_DOCKER_ORIGIN=chefdemo
+export AUTOMATE_VERSION=stable
+export DOCKER_REQUIRES_SUDO=false
+```
+
+### Docker-compose
+
+```bash
+git clone https://github.com/chef-customers/dockerized-chef-services.git
+cd dockerized-chef-services/docker
+docker-compose -f chef-server.yml down && docker system prune --volumes -f && docker-compose -f chef-server.yml up
+docker-compose -f automate.yml down && docker system prune --volumes -f && docker-compose -f automate.yml up
 ```
 
 ## Deployment notes

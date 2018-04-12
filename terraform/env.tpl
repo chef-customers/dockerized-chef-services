@@ -15,3 +15,4 @@ export CHEF_SERVER_DOCKER_ORIGIN=${chef_server_docker_origin}
 export CHEF_SERVER_VERSION=${chef_server_version}
 export AUTOMATE_DOCKER_ORIGIN=${automate_docker_origin}
 export AUTOMATE_VERSION=${automate_version}
+export DOCKER_REQUIRES_SUDO=${docker_requires_sudo}

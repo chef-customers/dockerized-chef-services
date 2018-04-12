@@ -5,6 +5,7 @@ aws_key_pair_file = "~/.ssh/jmiller"
 tag_dept = "SCE"
 tag_contact = "jeremy"
 automate_admin_password = "insecurepassword"
+docker_requires_sudo = "false"
 
 # Change if needed from the defaults below
 #
