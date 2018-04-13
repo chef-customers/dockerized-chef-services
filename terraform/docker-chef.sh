@@ -205,7 +205,7 @@ docker_svc_start () {
   # https://stackoverflow.com/questions/39297530/bash-use-variable-as-name-of-associative-array-when-calling-value
   svc=$(echo "$1"|tr '-' '_')
   image="$svc[image]"
-  supargs="$svc[supargs]"
+  supargs="$svc[supargs] --permanent-peer"
   env="$svc[env]"
 
   echo "Starting ${!image}"
@@ -240,12 +240,12 @@ stop_all () {
   echo "Stopping ALL.."
   case "$1" in
     chef-server)
-      for svc in postgresql chef-server-ctl elasticsearch oc_id bookshelf oc_bifrost oc_erchef chef-server-nginx; do
+      for svc in chef-server-nginx oc_erchef oc_id bookshelf oc_bifrost elasticsearch chef-server-ctl postgresql; do
         stop_svc "$svc"
       done
       ;;
     automate)
-      for svc in postgresql rabbitmq elasticsearch logstash workflow-server notifications compliance automate-nginx; do
+      for svc in automate-nginx workflow-server notifications compliance logstash rabbitmq elasticsearch postgresql; do
         stop_svc "$svc"
       done
       ;;
@@ -253,19 +253,23 @@ stop_all () {
       echo "not implemented"
       ;;
   esac
-  echo "Removing ${DATA_MOUNT:-/mnt/hab}/*_sup"
-  rm -rf ${DATA_MOUNT:-/mnt/hab}/*_sup
+  #echo "Removing ${DATA_MOUNT:-/mnt/hab}/*_sup"
+  #rm -rf ${DATA_MOUNT:-/mnt/hab}/*_sup
 }
 
 start_all () {
   case "$1" in
     chef-server)
-      for svc in postgresql chef-server-ctl elasticsearch oc_id bookshelf oc_bifrost oc_erchef chef-server-nginx; do
+      docker_svc_start "postgresql"
+      sleep 10
+      for svc in chef-server-ctl elasticsearch oc_id bookshelf oc_bifrost oc_erchef chef-server-nginx; do
         docker_svc_start "$svc"
       done
       ;;
     automate)
-      for svc in postgresql rabbitmq elasticsearch logstash workflow-server notifications compliance automate-nginx; do
+      docker_svc_start "postgresql"
+      sleep 10
+      for svc in rabbitmq elasticsearch logstash workflow-server notifications compliance automate-nginx; do
         docker_svc_start "$svc"
       done
       ;;
