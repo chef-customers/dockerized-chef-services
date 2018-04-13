@@ -215,6 +215,7 @@ docker_svc_start () {
   rm -f ${DATA_MOUNT:-/mnt/hab}/${1}_sup/default/LOCK
   $(sudo_cmd) docker run --rm -it \
     --name="${1}" \
+    --env="HOME=/hab/svc/${1}/data" \
     --env="${!env:-ILOVECHEF=1}" \
     --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
     --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
