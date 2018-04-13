@@ -19,7 +19,7 @@ variable "default_security_group" { default = "sg-c9beb2ac" }
 variable "aws_ami_user" { default = "centos" }
 variable "aws_ami_id" { default = "" }  # leave blank to auto-select the latest highperf CentOS 7 image
 variable "aws_instance_names" { default = ["automate", "chef-server"] }
-variable "aws_instance_types" { default = ["m4.2xlarge", "m4.xlarge"] } # Automate, Chef Server
+variable "aws_instance_types" { default = ["m5.large", "m5.large"] } # Automate, Chef Server
 
 # chef services - also ok to leave as default
 variable "container_username" { default = "chef-dev-ux" }
