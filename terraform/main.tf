@@ -34,6 +34,7 @@ variable "chef_server_docker_origin" { default = "chefserverofficial" }
 variable "automate_docker_origin" { default = "chefdemo" }
 variable "chef_server_version" { default = "stable" }
 variable "automate_version" { default = "stable" }
+variable "docker_detach_container" { default = "true" }
 
 provider "aws" {
   region  = "${var.aws_region}"
@@ -69,6 +70,7 @@ data "template_file" "env_sh" {
     automate_docker_origin = "${var.automate_docker_origin}"
     automate_version = "${var.automate_version}"
     docker_requires_sudo = "${var.docker_requires_sudo}"
+    docker_detach_container = "${var.docker_detach_container}"
   }
 }
 

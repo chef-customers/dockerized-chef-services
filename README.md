@@ -118,6 +118,7 @@ export CHEF_SERVER_VERSION=stable
 export AUTOMATE_DOCKER_ORIGIN=chefdemo
 export AUTOMATE_VERSION=stable
 export DOCKER_REQUIRES_SUDO=false
+export DOCKER_DETACH_CONTAINER=true
 ```
 
 ### Docker-compose

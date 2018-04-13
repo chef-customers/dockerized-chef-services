@@ -24,3 +24,4 @@ docker_requires_sudo = "false"
 # automate_docker_origin = "chefdemo"
 # chef_server_version = "stable" # latest, or semver ie. 12.17.41
 # automate_version = "stable" # latest, or semver ie. 1.8.38
+# docker_detach_container = "true"
