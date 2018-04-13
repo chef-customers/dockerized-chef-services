@@ -227,7 +227,7 @@ docker_svc_start () {
     --ulimit nofile=65536:65536 \
     --user="${USER_ID:-42}:${GROUP_ID:-42}" \
     --network=host \
-    --detach=true \
+    --detach=${DOCKER_DETACH_CONTAINER:-true} \
     ${!image} \
     ${!supargs}
 }

@@ -16,3 +16,4 @@ export CHEF_SERVER_VERSION=${chef_server_version}
 export AUTOMATE_DOCKER_ORIGIN=${automate_docker_origin}
 export AUTOMATE_VERSION=${automate_version}
 export DOCKER_REQUIRES_SUDO=${docker_requires_sudo}
+export DOCKER_DETACH_CONTAINER=${docker_detach_container}
