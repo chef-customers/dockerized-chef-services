@@ -6,6 +6,8 @@ tag_dept = "SCE"
 tag_contact = "jeremy"
 automate_admin_password = "insecurepassword"
 docker_requires_sudo = "false"
+chef_server_version = "12.17.42" # latest, or semver ie. 12.17.41
+automate_version = "1.8.38" # latest, or semver ie. 1.8.38
 
 # Change if needed from the defaults below
 #
