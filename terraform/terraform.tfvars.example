@@ -11,6 +11,7 @@ docker_requires_sudo = "false"
 #
 # aws_ami_user = "centos"
 # aws_ami_id = "" # search filter will find the latest AMI if emtpy string
+# aws_instance_types = ["m5.large", "m5.large"] # Automate, Chef Server
 # container_username = "chef-dev-ux"
 # container_uid = "9999"
 # container_gid = "8888"
