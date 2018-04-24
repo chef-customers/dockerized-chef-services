@@ -6,8 +6,6 @@ tag_dept = "SCE"
 tag_contact = "jeremy"
 automate_admin_password = "insecurepassword"
 docker_requires_sudo = "false"
-chef_server_version = "12.17.42" # latest, or semver ie. 12.17.41
-automate_version = "1.8.38" # latest, or semver ie. 1.8.38
 
 # Change if needed from the defaults below
 #
@@ -24,6 +22,6 @@ automate_version = "1.8.38" # latest, or semver ie. 1.8.38
 # automate_token = "93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506"
 # chef_server_docker_origin = "chefserverofficial"
 # automate_docker_origin = "chefdemo"
-# chef_server_version = "stable" # latest, or semver ie. 12.17.41
-# automate_version = "stable" # latest, or semver ie. 1.8.38
+# chef_server_version = "latest" # latest, or a tag from: https://hub.docker.com/r/chefserverofficial/oc_erchef/tags/
+# automate_version = "stable" # stable, or a tag from: https://hub.docker.com/r/chefdemo/workflow-server/tags/
 # docker_detach_container = "true"
