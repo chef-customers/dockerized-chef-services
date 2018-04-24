@@ -32,7 +32,7 @@ variable "automate_enabled" { default = "true" }
 variable "automate_token" { default = "93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506" }
 variable "chef_server_docker_origin" { default = "chefserverofficial" }
 variable "automate_docker_origin" { default = "chefdemo" }
-variable "chef_server_version" { default = "stable" }
+variable "chef_server_version" { default = "latest" }
 variable "automate_version" { default = "stable" }
 variable "docker_detach_container" { default = "true" }
 
@@ -188,8 +188,8 @@ resource "null_resource" "provision_cluster" {
   }
 }
 
-output "automate_server" {
-  value = "https://${aws_instance.automate_cluster.*.public_dns[0]}"
+output "automate_server_ssh" {
+  value = "${var.aws_ami_user}@${aws_instance.automate_cluster.*.public_dns[0]}"
 }
 
 output "automate_admin_user" {
@@ -200,6 +200,6 @@ output "automate_admin_password" {
   value = "${var.automate_admin_password}"
 }
 
-output "chef_server" {
-  value = "https://${aws_instance.automate_cluster.*.public_dns[1]}"
+output "chef_server_ssh" {
+  value = "${var.aws_ami_user}@${aws_instance.automate_cluster.*.public_dns[1]}"
 }
