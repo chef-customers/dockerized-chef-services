@@ -192,6 +192,11 @@ accept = true
 "
 automate_nginx["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind compliance:compliance.default --bind elasticsearch:elasticsearch5.default --bind workflow:workflow-server.default --bind notifications:notifications.default --listen-gossip 0.0.0.0:9656 --listen-http 0.0.0.0:9666"
 
+declare -A reaper
+reaper["image"]="${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/reaper:${AUTOMATE_VERSION:-stable}"
+reaper["env"]=""
+reaper["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind elasticsearch:elasticsearch5.default --bind workflow:workflow-server.default --listen-gossip 0.0.0.0:9657 --listen-http 0.0.0.0:9667"
+
 # Service functions
 #
 
@@ -248,7 +253,7 @@ stop_all () {
       done
       ;;
     automate)
-      for svc in automate-nginx workflow-server notifications compliance logstash rabbitmq elasticsearch postgresql; do
+      for svc in automate-nginx workflow-server notifications compliance logstash rabbitmq elasticsearch postgresql reaper; do
         stop_svc "$svc"
       done
       ;;
@@ -272,7 +277,7 @@ start_all () {
     automate)
     docker_svc_start "postgresql"
     sleep 10
-    for svc in rabbitmq elasticsearch logstash workflow-server notifications compliance automate-nginx; do
+    for svc in rabbitmq elasticsearch logstash workflow-server notifications compliance automate-nginx reaper; do
         docker_svc_start "$svc"
       done
       ;;
