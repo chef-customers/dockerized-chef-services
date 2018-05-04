@@ -94,6 +94,8 @@ services:
   chef-server-nginx:
     image: ${HAB_ORIGIN:-chefserverofficial}/chef-server-nginx
     network_mode: host
+    tty: true
+    stdin_open: true
     volumes:
       - nginx-data:/hab/svc/chef-server-nginx/data
     command: --peer ${HOST_IP:-172.17.0.1}
@@ -105,6 +107,9 @@ services:
       --bind chef-server-ctl:chef-server-ctl.default
       --listen-gossip 0.0.0.0:9656
       --listen-http 0.0.0.0:9666
+    environment:
+      HAB_CHEF_SERVER_NGINX: |
+        access_log = "/dev/tty"
 
 volumes:
   postgresql-data:
