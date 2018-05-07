@@ -130,6 +130,17 @@ services:
       - maintenance:/var/opt/delivery/delivery/etc
       - nginx-data:/hab/svc/automate-nginx/data
 
+  reaper:
+    image: ${HAB_ORIGIN:-chefdemo}/reaper:${VERSION:-current}
+    network_mode: host
+    command: --peer ${HOST_IP:-172.17.0.1}
+      --bind elasticsearch:elasticsearch5.default
+      --bind workflow:workflow-server.default
+      --listen-gossip 0.0.0.0:9657
+      --listen-http 0.0.0.0:9667
+    depends_on:
+      - postgresql
+
 volumes:
   compliance-data:
   elasticsearch-data:
