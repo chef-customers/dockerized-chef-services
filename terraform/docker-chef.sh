@@ -253,7 +253,7 @@ stop_all () {
       done
       ;;
     automate)
-      for svc in automate-nginx workflow-server notifications compliance logstash rabbitmq elasticsearch postgresql reaper; do
+      for svc in reaper automate-nginx workflow-server notifications compliance logstash rabbitmq elasticsearch postgresql; do
         stop_svc "$svc"
       done
       ;;
