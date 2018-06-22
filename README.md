@@ -130,6 +130,10 @@ docker-compose -f chef-server.yml down && docker system prune --volumes -f && do
 docker-compose -f automate.yml down && docker system prune --volumes -f && docker-compose -f automate.yml up
 ```
 
+## Configuration of the services
+
+see: [All of the configurable values](TUNABLES.md)
+
 ## Deployment notes
 
 Some environments may require the following, particularly if Elasticsearch refuses to start:
@@ -204,7 +208,35 @@ docker exec -it chef-server-ctl chef-server-ctl (subcommands)
 
 ### Chef Automate
 
-Coming Soon! We will be releasing an `automat-ctl` command in the `workflow-server` container.
+Running `automate-ctl`:
+```
+docker exec -it workflow-server automate-ctl (subcommands)
+```
+
+Setting the LDAP configuration: Adjust the environment variables passed to the workflow-server container:
+```
+workflow_server["env"]="HAB_WORKFLOW_SERVER=
+enterprise = \"${ENTERPRISE:-default}\"
+default_admin_password = \"${ADMIN_PASSWORD:-chefrocks}\"
+[data_collector]
+token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506}\"
+[mlsa]
+accept = true
+[auth]
+  [auth.ldap]
+  enabled = true
+  attr_full_name = "fullName"
+  attr_login = "sAMAccountName"
+  attr_mail = "mail"
+  base_dn = "OU=Employees,OU=Domain users,DC=examplecorp,DC=com"
+  bind_dn = "ldapbind"
+  bind_dn_password = "secret123"
+  encryption = "start_tls"
+  hosts = ["ad.mycompany.com"]
+  port = 3269
+  timeout = 5000
+"
+```
 
 ## Logging
 All container logs are directed to STDOUT. You should employ a Docker logging mechanism to ensure those logs are captured and aggregated in a central location. Being able to provide full logs from all containers is necessary in order to recieve support.
