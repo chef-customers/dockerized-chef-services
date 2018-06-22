@@ -86,8 +86,10 @@ postgresql["supargs"]=""
 
 declare -A elasticsearch
 elasticsearch["image"]="${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/elasticsearch5:${AUTOMATE_VERSION:-stable}"
-elasticsearch["env"]=""
 elasticsearch["supargs"]="--peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9651 --listen-http 0.0.0.0:9661"
+elasticsearch["env"]="HAB_ELASTICSEARCH5=[runtime]
+heapsize = \"4g\"
+"
 
 # Chef Server
 #
@@ -152,9 +154,13 @@ enabled = true
 rabbitmq["supargs"]="--peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9650 --listen-http 0.0.0.0:9660"
 
 declare -A logstash
+#logstash["image"]="irvingpop/logstash"
 logstash["image"]="${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/logstash:${AUTOMATE_VERSION:-stable}"
-logstash["env"]=""
 logstash["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind elasticsearch:elasticsearch5.default --bind rabbitmq:rabbitmq.default --listen-gossip 0.0.0.0:9652 --listen-http 0.0.0.0:9662"
+logstash["env"]="HAB_LOGSTASH=
+java_heap_size=\"2g\"
+pipeline_batch_size=40
+"
 
 declare -A workflow_server
 workflow_server["image"]="${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/workflow-server:${AUTOMATE_VERSION:-stable}"
