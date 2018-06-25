@@ -1,5 +1,10 @@
 .terraform
-*.tfstate
-*.tfstate.backup
+*.tfstate*
 terraform.tfvars
-.terraform.tfstate.lock.info
+!example.tfvars
+
+results/
+user.toml
+inspec.lock
+
+.DS_Store
