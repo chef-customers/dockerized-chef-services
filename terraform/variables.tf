@@ -132,5 +132,6 @@ variable "automate_version" {
 }
 
 variable "docker_detach_container" {
-  default = "true"
+  default     = "true"
+  description = "[true|false] When executing docker commands and entering into shell sessions on the container, detach from the container's shell session."
 }
