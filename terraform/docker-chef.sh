@@ -213,7 +213,7 @@ docker_svc_start () {
   # https://stackoverflow.com/questions/39297530/bash-use-variable-as-name-of-associative-array-when-calling-value
   svc=$(echo "$1"|tr '-' '_')
   image="$svc[image]"
-  supargs="$svc[supargs]"
+  supargs="$svc[supargs] --permanent-peer"
   env="$svc[env]"
 
   echo "Starting ${!image}"
