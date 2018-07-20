@@ -1,6 +1,8 @@
 # Configurable environment variables:
-# HAB_ORIGIN - denotes the docker origin (dockerhub ID)
-# VERSION -  the version identifier tag on the packages
+# CHEF_SERVER_DOCKER_ORIGIN - denotes the docker origin (dockerhub ID) or default to `chefserverofficial`
+# AUTOMATE_DOCKER_ORIGIN - denotes the docker origin (dockerhub ID) or default to `chefdemo`
+# CHEF_SERVER_VERSION -  the version identifier tag on the Chef Server packages
+# AUTOMATE_VERSION -  the version identifier tag on the postgresql and elasticsearch packages from the `chefdemo` docker origin
 # HOST_IP - the IP address of the docker host. 172.17.0.1 is commonly the docker0 interface which is fine
 # AUTOMATE_ENABLED - enable the Automate data collector (true or false)
 # AUTOMATE_SERVER - the IP address or hostname of the Automate server
@@ -8,7 +10,7 @@
 version: '2.1'
 services:
   postgresql:
-    image: ${HAB_ORIGIN:-chefserverofficial}/postgresql
+    image: ${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/postgresql:${AUTOMATE_VERSION:-stable}
     network_mode: host
     environment:
       HAB_POSTGRESQL: |
@@ -16,10 +18,11 @@ services:
         name = 'hab'
         password = 'chefrocks'
     volumes:
+      - ${PWD}/CTL_SECRET:/hab/sup/default/CTL_SECRET
       - postgresql-data:/hab/svc/postgresql/data
 
   chef-server-ctl:
-    image: ${HAB_ORIGIN:-chefserverofficial}/chef-server-ctl
+    image: ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/chef-server-ctl:${CHEF_SERVER_VERSION:-latest}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --listen-gossip 0.0.0.0:9650
@@ -30,9 +33,11 @@ services:
         ip = '${HOST_IP:-172.17.0.1}'
         [secrets.data_collector]
         token = "${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506}"
+    volumes:
+      - ${PWD}/CTL_SECRET:/hab/sup/default/CTL_SECRET
 
   elasticsearch:
-    image: ${HAB_ORIGIN:-chefserverofficial}/elasticsearch5:${VERSION:-latest}
+    image: ${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/elasticsearch5:${AUTOMATE_VERSION:-stable}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --listen-gossip 0.0.0.0:9651
@@ -42,37 +47,44 @@ services:
         soft: 65536
         hard: 65536
     volumes:
+      - ${PWD}/CTL_SECRET:/hab/sup/default/CTL_SECRET
       - elasticsearch-data:/hab/svc/elasticsearch/data
 
   oc_id:
-    image: ${HAB_ORIGIN:-chefserverofficial}/oc_id
+    image: ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_id:${CHEF_SERVER_VERSION:-latest}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind database:postgresql.default
       --bind chef-server-ctl:chef-server-ctl.default
       --listen-gossip 0.0.0.0:9652
       --listen-http 0.0.0.0:9662
+    volumes:
+      - ${PWD}/CTL_SECRET:/hab/sup/default/CTL_SECRET
 
   bookshelf:
-    image: ${HAB_ORIGIN:-chefserverofficial}/bookshelf
+    image: ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/bookshelf:${CHEF_SERVER_VERSION:-latest}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind database:postgresql.default
       --bind chef-server-ctl:chef-server-ctl.default
       --listen-gossip 0.0.0.0:9653
       --listen-http 0.0.0.0:9663
+    volumes:
+      - ${PWD}/CTL_SECRET:/hab/sup/default/CTL_SECRET
 
   oc_bifrost:
-    image: ${HAB_ORIGIN:-chefserverofficial}/oc_bifrost
+    image: ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_bifrost:${CHEF_SERVER_VERSION:-latest}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind database:postgresql.default
       --bind chef-server-ctl:chef-server-ctl.default
       --listen-gossip 0.0.0.0:9654
       --listen-http 0.0.0.0:9664
+    volumes:
+      - ${PWD}/CTL_SECRET:/hab/sup/default/CTL_SECRET
 
   oc_erchef:
-    image: ${HAB_ORIGIN:-chefserverofficial}/oc_erchef
+    image: ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_erchef:${CHEF_SERVER_VERSION:-latest}
     network_mode: host
     volumes:
       - erchef-data:/hab/svc/oc_erchef/data
@@ -90,13 +102,16 @@ services:
         enabled = ${AUTOMATE_ENABLED:-false}
         server = "${AUTOMATE_SERVER:-localhost}"
         port = 443
+    volumes:
+      - ${PWD}/CTL_SECRET:/hab/sup/default/CTL_SECRET
 
   chef-server-nginx:
-    image: ${HAB_ORIGIN:-chefserverofficial}/chef-server-nginx
+    image: ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/chef-server-nginx:${CHEF_SERVER_VERSION:-latest}
     network_mode: host
     tty: true
     stdin_open: true
     volumes:
+      - ${PWD}/CTL_SECRET:/hab/sup/default/CTL_SECRET
       - nginx-data:/hab/svc/chef-server-nginx/data
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind oc_erchef:oc_erchef.default

@@ -1,6 +1,6 @@
 # Configurable environment variables:
-# HAB_ORIGIN - denotes the docker origin (dockerhub ID)
-# VERSION -  the version identifier tag on the packages
+# AUTOMATE_DOCKER_ORIGIN - denotes the docker origin (dockerhub ID) or default to `chefdemo`
+# AUTOMATE_VERSION -  the version identifier tag on the postgresql and elasticsearch packages from the `chefdemo` docker origin
 # HOST_IP - the IP address of the docker host. 172.17.0.1 is commonly the docker0 interface which is fine
 # ENTERPRISE - the name of the Automate enterprise to create
 # ADMIN_PASSWORD - the initial password to set for the 'admin' user in the Automate UI
@@ -9,7 +9,7 @@
 version: '2.1'
 services:
   postgresql:
-    image: ${HAB_ORIGIN:-chefdemo}/postgresql:${VERSION:-current}
+    image: ${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/postgresql:${AUTOMATE_VERSION:-stable}
     network_mode: host
     environment:
       HAB_POSTGRESQL: |
@@ -17,10 +17,11 @@ services:
         name = 'hab'
         password = 'chefrocks'
     volumes:
+      - ${PWD}/CTL_SECRET:/hab/sup/default/CTL_SECRET
       - postgresql-data:/hab/svc/postgresql/data
 
   rabbitmq:
-    image: ${HAB_ORIGIN:-chefdemo}/rabbitmq:${VERSION:-current}
+    image: ${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/rabbitmq:${AUTOMATE_VERSION:-stable}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --listen-gossip 0.0.0.0:9650
@@ -36,10 +37,11 @@ services:
         [rabbitmq.management]
         enabled = true
     volumes:
+      - ${PWD}/CTL_SECRET:/hab/sup/default/CTL_SECRET
       - rabbitmq-data:/hab/svc/rabbitmq/data
 
   elasticsearch:
-    image: ${HAB_ORIGIN:-chefserverofficial}/elasticsearch5:${VERSION:-latest}
+    image: ${AUTOMATE_DOCKER_ORIGIN:-chefserverofficial}/elasticsearch5:${AUTOMATE_VERSION:-latest}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --listen-gossip 0.0.0.0:9651
@@ -47,10 +49,11 @@ services:
     depends_on:
       - postgresql
     volumes:
+      - ${PWD}/CTL_SECRET:/hab/sup/default/CTL_SECRET
       - elasticsearch-data:/hab/svc/elasticsearch/data
 
   logstash:
-    image: ${HAB_ORIGIN:-chefdemo}/logstash:${VERSION:-current}
+    image: ${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/logstash:${AUTOMATE_VERSION:-stable}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind elasticsearch:elasticsearch5.default
@@ -59,9 +62,11 @@ services:
       --listen-http 0.0.0.0:9662
     depends_on:
       - postgresql
+    volumes:
+      - ${PWD}/CTL_SECRET:/hab/sup/default/CTL_SECRET
 
   workflow-server:
-    image: ${HAB_ORIGIN:-chefdemo}/workflow-server:${VERSION:-current}
+    image: ${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/workflow-server:${AUTOMATE_VERSION:-stable}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind database:postgresql.default
@@ -81,11 +86,12 @@ services:
         [mlsa]
         accept = true
     volumes:
+      - ${PWD}/CTL_SECRET:/hab/sup/default/CTL_SECRET
       - maintenance:/var/opt/delivery/delivery/etc
       - workflow-data:/hab/svc/workflow-server/data
 
   notifications:
-    image: ${HAB_ORIGIN:-chefdemo}/notifications:${VERSION:-current}
+    image: ${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/notifications:${AUTOMATE_VERSION:-stable}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind elasticsearch:elasticsearch5.default
@@ -94,9 +100,11 @@ services:
       --listen-http 0.0.0.0:9664
     depends_on:
       - postgresql
+    volumes:
+      - ${PWD}/CTL_SECRET:/hab/sup/default/CTL_SECRET
 
   compliance:
-    image: ${HAB_ORIGIN:-chefdemo}/compliance:${VERSION:-current}
+    image: ${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/compliance:${AUTOMATE_VERSION:-stable}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind elasticsearch:elasticsearch5.default
@@ -106,10 +114,11 @@ services:
     depends_on:
       - postgresql
     volumes:
+      - ${PWD}/CTL_SECRET:/hab/sup/default/CTL_SECRET
       - compliance-data:/hab/svc/compliance/data
 
   automate-nginx:
-    image: ${HAB_ORIGIN:-chefdemo}/automate-nginx:${VERSION:-current}
+    image: ${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/automate-nginx:${AUTOMATE_VERSION:-stable}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind compliance:compliance.default
@@ -127,6 +136,7 @@ services:
         [mlsa]
         accept = true
     volumes:
+      - ${PWD}/CTL_SECRET:/hab/sup/default/CTL_SECRET
       - maintenance:/var/opt/delivery/delivery/etc
       - nginx-data:/hab/svc/automate-nginx/data
 
