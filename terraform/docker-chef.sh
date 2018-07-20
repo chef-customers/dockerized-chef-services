@@ -225,6 +225,7 @@ docker_svc_start () {
     --name="${1}" \
     --env="HOME=/hab/svc/${1}/data" \
     --env="${!env:-ILOVECHEF=1}" \
+    --volume ${DATA_MOUNT:-/mnt/hab}/CTL_SECRET:/hab/sup/default/CTL_SECRET:ro \
     --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
     --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
     --volume ${DATA_MOUNT:-/mnt/hab}/${1}_svc:/hab/svc \
