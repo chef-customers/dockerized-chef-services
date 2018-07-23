@@ -102,6 +102,11 @@ services:
         enabled = ${AUTOMATE_ENABLED:-false}
         server = "${AUTOMATE_SERVER:-localhost}"
         port = 443
+        [chef_authn]
+        keygen_cache_workers = 2
+        keygen_cache_size = 10
+        keygen_start_size = 0
+        keygen_timeout = 20000
     volumes:
       - ${PWD}/CTL_SECRET:/hab/sup/default/CTL_SECRET
 
