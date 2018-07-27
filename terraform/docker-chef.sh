@@ -279,7 +279,7 @@ tar_svc_logs() {
   mkdir $LOG_DIR
 
   for svc in "${arr[@]}"; do
-    docker logs "$svc" > $LOG_DIR/$svc.log
+    $(sudo_cmd) docker logs "$svc" > $LOG_DIR/$svc.log
   done
 
   LOG_GZ="$LOG_DIR.tar.gz"
