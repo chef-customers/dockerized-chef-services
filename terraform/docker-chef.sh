@@ -272,7 +272,7 @@ stop_all () {
   rm -rf ${DATA_MOUNT:-/mnt/hab}/*_sup
 }
 
-tar_svcs() {
+tar_svc_logs() {
   arr=("$@")
 
   LOG_DIR="$(hostname -s)-$(date +'%Y%m%d%H%M%S')-logs"
@@ -304,14 +304,14 @@ gatherlogs_all () {
       exit 1
       ;;
   esac
-  tar_svcs "${array[@]}"
+  tar_svc_logs "${array[@]}"
   exit 0
 }
 
 gatherlogs_svc () {
   echo "Gathering logs for $SERVICE_TYPE $1"
   array=("$1")
-  tar_svcs "${array[@]}"
+  tar_svc_logs "${array[@]}"
   exit 0
 }
 start_all () {
