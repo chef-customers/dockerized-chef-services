@@ -29,10 +29,13 @@ You must specify the following options:
  -s [automate|chef-server]           REQUIRED: Services type: Chef Server or Chef Automate
  -a [stop|start]                     REQUIRED: Action type: start or stop services
  -n [container name]                 OPTIONAL: The docker container name. Leaving blank implies ALL
+ -g [gather-logs]                    OPTIONAL: Save container logs to .gz
  -h                                  OPTIONAL: Print this help message
 
  ex. $0 -s chef-server -a start            # starts up all Chef Server services
  ex. $0 -s automate -a stop -n logstash    # stops Automate's logstash service
+ ex. $0 -s automate -g                     # saves all Automate container logs to .gz
+ ex. $0 -s chef-server -g -n postgresql    # saves Chef Server Postgresql logs to .gz
 
 "
 
@@ -45,7 +48,7 @@ if [ $# -eq 0 ]; then
   usage
 fi
 
-while getopts "s:a:n:h" opt; do
+while getopts "s:a:n:gh" opt; do
   case $opt in
     s)
       echo "Service type: $OPTARG"
@@ -58,6 +61,9 @@ while getopts "s:a:n:h" opt; do
     n)
       echo "Service name: $OPTARG"
       export SERVICE_NAME=$OPTARG
+      ;;
+    g)
+      export GATHER_LOGS=true
       ;;
     h)
       usage
@@ -86,7 +92,7 @@ postgresql["supargs"]=""
 
 declare -A elasticsearch
 elasticsearch["image"]="${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/elasticsearch5:${AUTOMATE_VERSION:-stable}"
-elasticsearch["supargs"]="--peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9651 --listen-http 0.0.0.0:9661"
+elasticsearch["supargs"]="--peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9651 --listen-http 0.0.0.0:9661 --listen-ctl 0.0.0.0:9633"
 elasticsearch["env"]="HAB_ELASTICSEARCH5=[runtime]
 heapsize = \"4g\"
 "
@@ -101,22 +107,22 @@ ssl_port = \"8443\"
 [secrets.data_collector]
 token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506}\"
 "
-chef_server_ctl["supargs"]="--peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9650 --listen-http 0.0.0.0:9660"
+chef_server_ctl["supargs"]="--peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9650 --listen-http 0.0.0.0:9660 --listen-ctl 0.0.0.0:9634"
 
 declare -A oc_id
 oc_id["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_id:${CHEF_SERVER_VERSION:-stable}"
 oc_id["env"]=""
-oc_id["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9652 --listen-http 0.0.0.0:9662"
+oc_id["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9652 --listen-http 0.0.0.0:9662 --listen-ctl 0.0.0.0:9635"
 
 declare -A bookshelf
 bookshelf["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/bookshelf:${CHEF_SERVER_VERSION:-stable}"
 bookshelf["env"]=""
-bookshelf["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9653 --listen-http 0.0.0.0:9663"
+bookshelf["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9653 --listen-http 0.0.0.0:9663 --listen-ctl 0.0.0.0:9636"
 
 declare -A oc_bifrost
 oc_bifrost["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_bifrost:${CHEF_SERVER_VERSION:-stable}"
 oc_bifrost["env"]=""
-oc_bifrost["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9654 --listen-http 0.0.0.0:9664"
+oc_bifrost["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9654 --listen-http 0.0.0.0:9664 --listen-ctl 0.0.0.0:9637"
 
 declare -A oc_erchef
 oc_erchef["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_erchef:${CHEF_SERVER_VERSION:-stable}"
@@ -130,11 +136,11 @@ keygen_cache_size = 10
 keygen_start_size = 0
 keygen_timeout = 20000
 "
-oc_erchef["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind bookshelf:bookshelf.default --bind oc_bifrost:oc_bifrost.default --bind database:postgresql.default --bind elasticsearch:elasticsearch5.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9655 --listen-http 0.0.0.0:9665"
+oc_erchef["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind bookshelf:bookshelf.default --bind oc_bifrost:oc_bifrost.default --bind database:postgresql.default --bind elasticsearch:elasticsearch5.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9655 --listen-http 0.0.0.0:9665 --listen-ctl 0.0.0.0:9638"
 
 declare -A chef_server_nginx
 chef_server_nginx["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/chef-server-nginx:${CHEF_SERVER_VERSION:-stable}"
-chef_server_nginx["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind oc_erchef:oc_erchef.default --bind oc_bifrost:oc_bifrost.default --bind oc_id:oc_id.default --bind bookshelf:bookshelf.default --bind elasticsearch:elasticsearch5.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9656 --listen-http 0.0.0.0:9666"
+chef_server_nginx["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind oc_erchef:oc_erchef.default --bind oc_bifrost:oc_bifrost.default --bind oc_id:oc_id.default --bind bookshelf:bookshelf.default --bind elasticsearch:elasticsearch5.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9656 --listen-http 0.0.0.0:9666 --listen-ctl 0.0.0.0:9639"
 chef_server_nginx["env"]='HAB_CHEF_SERVER_NGINX=
 access_log = "/dev/stdout"
 '
@@ -151,12 +157,12 @@ default_pass = 'chefrocks'
 [rabbitmq.management]
 enabled = true
 "
-rabbitmq["supargs"]="--peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9650 --listen-http 0.0.0.0:9660"
+rabbitmq["supargs"]="--peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9650 --listen-http 0.0.0.0:9660 --listen-ctl 0.0.0.0:9633"
 
 declare -A logstash
 #logstash["image"]="irvingpop/logstash"
 logstash["image"]="${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/logstash:${AUTOMATE_VERSION:-stable}"
-logstash["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind elasticsearch:elasticsearch5.default --bind rabbitmq:rabbitmq.default --listen-gossip 0.0.0.0:9652 --listen-http 0.0.0.0:9662"
+logstash["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind elasticsearch:elasticsearch5.default --bind rabbitmq:rabbitmq.default --listen-gossip 0.0.0.0:9652 --listen-http 0.0.0.0:9662 --listen-ctl 0.0.0.0:9634"
 logstash["env"]="HAB_LOGSTASH=
 java_heap_size=\"2g\"
 pipeline_batch_size=40
@@ -172,12 +178,12 @@ token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb
 [mlsa]
 accept = true
 "
-workflow_server["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind elasticsearch:elasticsearch5.default --bind rabbitmq:rabbitmq.default --listen-gossip 0.0.0.0:9653 --listen-http 0.0.0.0:9663"
+workflow_server["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind elasticsearch:elasticsearch5.default --bind rabbitmq:rabbitmq.default --listen-gossip 0.0.0.0:9653 --listen-http 0.0.0.0:9663 --listen-ctl 0.0.0.0:9635"
 
 declare -A notifications
 notifications["image"]="${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/notifications:${AUTOMATE_VERSION:-stable}"
 notifications["env"]=""
-notifications["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind elasticsearch:elasticsearch5.default --bind rabbitmq:rabbitmq.default --listen-gossip 0.0.0.0:9654 --listen-http 0.0.0.0:9664"
+notifications["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind elasticsearch:elasticsearch5.default --bind rabbitmq:rabbitmq.default --listen-gossip 0.0.0.0:9654 --listen-http 0.0.0.0:9664 --listen-ctl 0.0.0.0:9636"
 
 declare -A compliance
 compliance["image"]="${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/compliance:${AUTOMATE_VERSION:-stable}"
@@ -186,7 +192,7 @@ host = \"0.0.0.0\"
 [profiles]
 secrets_key = \"12345678901234567890123456789012\"
 "
-compliance["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind postgresql:postgresql.default --bind elasticsearch:elasticsearch5.default --bind workflow:workflow-server.default --listen-gossip 0.0.0.0:9655 --listen-http 0.0.0.0:9665"
+compliance["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind postgresql:postgresql.default --bind elasticsearch:elasticsearch5.default --bind workflow:workflow-server.default --listen-gossip 0.0.0.0:9655 --listen-http 0.0.0.0:9665 --listen-ctl 0.0.0.0:9637"
 
 declare -A automate_nginx
 automate_nginx["image"]="${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/automate-nginx:${AUTOMATE_VERSION:-stable}"
@@ -196,7 +202,7 @@ ssl_port = ${PILOT_HTTPS_PORT:-8443}
 [mlsa]
 accept = true
 "
-automate_nginx["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind compliance:compliance.default --bind elasticsearch:elasticsearch5.default --bind workflow:workflow-server.default --bind notifications:notifications.default --listen-gossip 0.0.0.0:9656 --listen-http 0.0.0.0:9666"
+automate_nginx["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind compliance:compliance.default --bind elasticsearch:elasticsearch5.default --bind workflow:workflow-server.default --bind notifications:notifications.default --listen-gossip 0.0.0.0:9656 --listen-http 0.0.0.0:9666 --listen-ctl 0.0.0.0:9638"
 
 # Service functions
 #
@@ -266,6 +272,48 @@ stop_all () {
   rm -rf ${DATA_MOUNT:-/mnt/hab}/*_sup
 }
 
+tar_svc_logs() {
+  arr=("$@")
+
+  LOG_DIR="$(hostname -s)-$(date +'%Y%m%d%H%M%S')-logs"
+  mkdir $LOG_DIR
+
+  for svc in "${arr[@]}"; do
+    docker logs "$svc" > $LOG_DIR/$svc.log
+  done
+
+  LOG_GZ="$LOG_DIR.tar.gz"
+  tar czf $LOG_GZ $LOG_DIR
+  rm -rf $LOG_DIR
+  echo "Logs saved to $LOG_GZ"
+}
+
+
+
+gatherlogs_all () {
+  echo "Gathering logs for all $SERVICE_TYPE services.."
+  case "$1" in
+    chef-server)
+      array=("chef-server-nginx" "oc_erchef" "oc_id" "bookshelf" "oc_bifrost" "elasticsearch" "chef-server-ctl" "postgresql")
+      ;;
+    automate)
+      array=("automate-nginx" "workflow-server" "notifications" "compliance" "logstash" "rabbitmq" "elasticsearch" "postgresql")
+      ;;
+    *)
+      echo "not implemented"
+      exit 1
+      ;;
+  esac
+  tar_svc_logs "${array[@]}"
+  exit 0
+}
+
+gatherlogs_svc () {
+  echo "Gathering logs for $SERVICE_TYPE $1"
+  array=("$1")
+  tar_svc_logs "${array[@]}"
+  exit 0
+}
 start_all () {
   case "$1" in
     chef-server)
@@ -294,6 +342,19 @@ case "$SERVICE_TYPE" in
      usage
      ;;
   automate|chef-server)
+    case "$GATHER_LOGS" in
+      true)
+        case "$SERVICE_NAME" in
+          # optional service name
+          "")
+            gatherlogs_all "$SERVICE_TYPE"
+            ;;
+          *)
+            gatherlogs_svc "$SERVICE_NAME"
+            ;;
+        esac
+        ;;
+    esac
     # start or stop
     case "$SERVICE_ACTION" in
       stop)

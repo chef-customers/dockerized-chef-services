@@ -264,3 +264,49 @@ workflow-server.default hook[health_check]:(HK): {"status":"pong","configuration
 "task_max_waiting_in_queue_millis":0,"active_shards_percent_as_number":50.0},"rabbitmq":{"status":"pong","vhost_aliveness":{"status":
 "pong"},"node_health":{"status":"pong"}}}]}
 ```
+
+## Automate License
+
+As the `$USER_ID` user on the Automate host, run the following commands to apply an Automate license.
+
+First copy the license to the host and place it in `$DATA_MOUNT/workflow-server_svc/workflow-server/var/`
+Next, log into the `workflow-server` container.
+```
+$ docker exec -it workflow-server bash
+```
+
+Create and export an environment variable to contain the Supervisor CTL gateway port for this
+particular container.
+```
+$ export SUP_PORT=$($(hab pkg path core/curl)/bin/curl -s http://127.0.0.1:9631/butterfly | $(hab pkg path core/jq-static)/bin/jq '.service.list."workflow-server.default"[].service.sys.ctl_gateway_port' -e -c -M -r)
+```
+
+Finally, use the `hab file upload ..` command to upload the license to the Habitat service.
+```
+$ hab file upload workflow-server.default $(date +'%s') /hab/svc/workflow-server/var/delivery.license -r 127.0.0.1:$SUP_PORT
+» Uploading file /hab/svc/workflow-server/var/delivery.license to 1532653445 incarnation workflow-server.default
+Ω Creating service file
+↑ Applying via peer 127.0.0.1:9635
+★ Uploaded file
+$
+```
+
+## Running `hab sup *` commands
+
+Due to the Remote Supervisor Control features introduced in Habitat 0.56.0 and the fact that we
+are setting unique Supervisor CTL Gateway ports for each service so they can all co-exist on one
+Docker Host, you must use the `--remote-sup IP:PORT` argument to `hab sup *` commands.
+
+For example, to run `hab sup status` on the `workflow-server` container, you can do so like this:
+```
+~ $ export SUP_PORT=$($(hab pkg path core/curl)/bin/curl -s http://127.0.0.1:963
+1/butterfly | $(hab pkg path core/jq-static)/bin/jq '.service.list."workflow-ser
+ver.default"[].service.sys.ctl_gateway_port' -e -c -M -r)
+~ $ hab sup status --remote-sup 127.0.0.1:$SUP_PORT
+package                                             type        state  elapsed (s)  pid   group
+jeremymv2/workflow-server/1.8.0-dev/20180726192935  standalone  up     857          3777  workflow-server.default
+~ $
+```
+
+Note: You will need to replace `workflow-server.default` with `CONTAINER-NAME.default` for the other
+containers.
