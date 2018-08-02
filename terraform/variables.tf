@@ -91,6 +91,11 @@ variable "container_gid" {
   description = "The group id used to set permission on the container host."
 }
 
+variable "ctl_secret" {
+  default     = "Owrwmex8X9MuoxrAP8Rw8cIOW40+xVU5ESLWxebHzlbT93AFoZsN66nxOD4i/a4+jPfAo+XmuFitx56+kimF9w=="
+  description = "The token used for communication between the hab cli and the habitat supervisor"
+}
+
 variable "container_data_mount" {
   default     = "/mnt/data"
   description = "The data mount created on each docker host."
