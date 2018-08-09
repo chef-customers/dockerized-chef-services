@@ -32,8 +32,8 @@ You must specify the following options:
  -s [automate|chef-server]           REQUIRED: Services type: Chef Server or Chef Automate
  -a [stop|start]                     REQUIRED: Action type: start or stop services
  -n [container name]                 OPTIONAL: The docker container name. Leaving blank implies ALL
- -l [path]                           OPTIONAL: Apply the Automate License from [path]
- -g [gather-logs]                    OPTIONAL: Save container logs to .gz
+ -l [path]                           OPTIONAL: Apply the Automate License from [path] (mutually exclusive with [a|n|g] options)
+ -g [gather-logs]                    OPTIONAL: Save container logs to .gz (mutually exclusive with [a|l] options)
  -h                                  OPTIONAL: Print this help message
 
  ex. $0 -s chef-server -a start                    : starts up all Chef Server services
@@ -282,6 +282,9 @@ stop_all () {
 }
 
 tar_svc_logs() {
+  [[ ! -z "$SERVICE_ACTION" ]] && usage
+  [[ ! -z "$AUTOMATE_LICENSE_PATH" ]] && usage
+
   arr=("$@")
 
   LOG_DIR="$(hostname -s)-$(date +'%Y%m%d%H%M%S')-logs"
@@ -324,6 +327,10 @@ gatherlogs_svc () {
 }
 
 apply_automate_license () {
+  [[ ! -z "$SERVICE_ACTION" ]] && usage
+  [[ ! -z "$SERVICE_NAME" ]] && usage
+  [[ ! -z "$GATHER_LOGS" ]] && usage
+
   echo "Applying license from $1 to workflow-server Habitat service"
   cp -f $1 ${DATA_MOUNT:-/mnt/hab}/workflow-server_svc/workflow-server/var/delivery.license
   $(sudo_cmd) docker exec -it workflow-server hab file upload workflow-server.default $(date +'%s') /hab/svc/workflow-server/var/delivery.license  --remote-sup 127.0.0.1:9809

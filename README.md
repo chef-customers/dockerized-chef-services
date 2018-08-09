@@ -15,10 +15,8 @@ Docker definitions for Chef Server and Automate 1.x
 ## Upgrading an existing installation to new Release
 
 1. Download the latest [docker-chef.sh](https://raw.githubusercontent.com/chef-customers/dockerized-chef-services/master/terraform/docker-chef.sh)
-2. Update the appropriate ENV variable (`AUTOMATE_VERSION` or `CHEF_SERVER_VERSION`) with the semver of the new Release, for ex. `1.8.85`.
+2. Update the appropriate ENV variable (`AUTOMATE_VERSION` or `CHEF_SERVER_VERSION`) with the semver of the new Release, for ex. `1.8.xx`.
 3. Use `docker-chef.sh` to stop then start all the Automate or Chef Server containers. The new container images will be pulled down, started and will automatically run any necessary upgrade steps on the data.
-
-**Note** If in an air-gapped environment you will need to first pull the correct images prior to Step 3 above.
 
 ## Deployment from scratch
 
