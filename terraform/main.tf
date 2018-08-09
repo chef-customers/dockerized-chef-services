@@ -137,10 +137,6 @@ resource "null_resource" "provision_cluster" {
     content     = "${data.template_file.passwd.rendered}"
     destination = "${var.container_data_mount}/passwd"
   }
-  provisioner "file" {
-    content     = "${var.ctl_secret}"
-    destination = "${var.container_data_mount}/CTL_SECRET"
-  }
   provisioner "remote-exec" {
     inline = [
       "sudo chmod a+x /home/${var.container_username}/*sh",
