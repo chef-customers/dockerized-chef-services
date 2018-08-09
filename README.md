@@ -3,9 +3,6 @@ Docker definitions for Chef Server and Automate 1.x
 
 ![Architecture Diagram](https://www.lucidchart.com/publicSegments/view/4f01dc86-c34a-49a9-b619-f3d1056e7a41/image.png)
 
-## Release Notes
-Please read the release notes [here](https://github.com/chef-customers/dockerized-chef-services/blob/master/RELEASE_NOTES.md) for any notable changes.
-
 ## How it works
 
 * All of the Chef Server and Chef Automate services have been packaged as Habitat `.hart` files
@@ -15,7 +12,15 @@ Please read the release notes [here](https://github.com/chef-customers/dockerize
 * Each host forms its own non-permanent Habitat gossip ring, sharing service discovery data intra-host only
 * Environment variables are used to configure settings from the default
 
-## Deploying it
+## Upgrading an existing installation to new Release
+
+1. Download the latest [docker-chef.sh](https://raw.githubusercontent.com/chef-customers/dockerized-chef-services/master/terraform/docker-chef.sh)
+2. Update the appropriate ENV variable (`AUTOMATE_VERSION` or `CHEF_SERVER_VERSION`) with the semver of the new Release, for ex. `1.8.85`.
+3. Use `docker-chef.sh` to stop then start all the Automate or Chef Server containers. The new container images will be pulled down, started and will automatically run any necessary upgrade steps on the data.
+
+**Note** If in an air-gapped environment you will need to first pull the correct images prior to Step 3 above.
+
+## Deployment from scratch
 
 ### Using AWS and Terraform
 
@@ -270,7 +275,7 @@ workflow-server.default hook[health_check]:(HK): {"status":"pong","configuration
 "pong"},"node_health":{"status":"pong"}}}]}
 ```
 
-In order to Gather up logs for Support:
+To gather up logs to send to Support:
 
 ```
 [user@host ~]$ ./docker-chef.sh -s automate -g
