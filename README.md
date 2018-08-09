@@ -52,12 +52,11 @@ You must specify the following options:
  -g [gather-logs]                    OPTIONAL: Save container logs to .gz
  -h                                  OPTIONAL: Print this help message
 
- ex. ./docker-chef.sh -s chef-server -a start            # starts up all Chef Server services
- ex. ./docker-chef.sh -s automate -a stop -n logstash    # stops Automate's logstash service
- ex. ./docker-chef.sh -s automate -g                     # saves all Automate container logs to .gz
- ex. ./docker-chef.sh -s chef-server -g -n postgresql    # saves Chef Server Postgresql logs to .gz
- ex. ./docker-chef.sh -s automate -l /path/to/delivery.license       # applies Automate license from /path/to/delivery.license
-
+ ex. ./docker-chef.sh -s chef-server -a start                    : starts up all Chef Server services
+ ex. ./docker-chef.sh -s automate -a stop -n logstash            : stops Automate's logstash service
+ ex. ./docker-chef.sh -s automate -g                             : saves all Automate container logs to .gz
+ ex. ./docker-chef.sh -s chef-server -g -n postgresql            : saves Chef Server Postgresql logs to .gz
+ ex. ./docker-chef.sh -s automate -l /path/to/delivery.license   : applies Automate license from /path/to/delivery.license
 
 [user@host ~]$
 ```
@@ -307,6 +306,8 @@ Applying license /tmp/delivery.license
 ★ Uploaded file
 [user@host ~]$
 ```
+
+After applying the license, the `workflow-server` container logs will no longer show license warning messages.
 
 ## Running `hab sup *` commands
 

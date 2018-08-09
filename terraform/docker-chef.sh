@@ -19,7 +19,7 @@
 # The above variables should all be set in a file named env.sh that lives beside this script.
 
 # Determine the IP address of the docker host.
-export HOST_IP=$(hostname --ip-address)
+HOST_IP=$(hostname --ip-address)
 
 THISDIR="$(dirname "$(which "$0")")"
 if [ -f "${THISDIR}/env.sh" ]; then
@@ -36,11 +36,11 @@ You must specify the following options:
  -g [gather-logs]                    OPTIONAL: Save container logs to .gz
  -h                                  OPTIONAL: Print this help message
 
- ex. $0 -s chef-server -a start            # starts up all Chef Server services
- ex. $0 -s automate -a stop -n logstash    # stops Automate's logstash service
- ex. $0 -s automate -g                     # saves all Automate container logs to .gz
- ex. $0 -s chef-server -g -n postgresql    # saves Chef Server Postgresql logs to .gz
- ex. $0 -s automate -l /path/to/delivery.license       # applies Automate license from /path/to/delivery.license
+ ex. $0 -s chef-server -a start                    : starts up all Chef Server services
+ ex. $0 -s automate -a stop -n logstash            : stops Automate's logstash service
+ ex. $0 -s automate -g                             : saves all Automate container logs to .gz
+ ex. $0 -s chef-server -g -n postgresql            : saves Chef Server Postgresql logs to .gz
+ ex. $0 -s automate -l /path/to/delivery.license   : applies Automate license from /path/to/delivery.license
 
 "
 
@@ -324,7 +324,7 @@ gatherlogs_svc () {
 }
 
 apply_automate_license () {
-  echo "Applying license $1"
+  echo "Applying license from $1 to workflow-server Habitat service"
   cp -f $1 ${DATA_MOUNT:-/mnt/hab}/workflow-server_svc/workflow-server/var/delivery.license
   $(sudo_cmd) docker exec -it workflow-server hab file upload workflow-server.default $(date +'%s') /hab/svc/workflow-server/var/delivery.license  --remote-sup 127.0.0.1:9809
   exit 0
