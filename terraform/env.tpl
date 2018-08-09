@@ -7,7 +7,6 @@ export GROUP_ID=${container_gid}
 export DATA_MOUNT=${container_data_mount}
 export ENTERPRISE=${automate_enterprise}
 export ADMIN_PASSWORD=${automate_admin_password}
-export HOST_IP=$(hostname --ip-address)
 export AUTOMATE_ENABLED=${automate_enabled}
 export AUTOMATE_SERVER=AUTOMATE_SERVER_IP_VALUE
 export AUTOMATE_TOKEN=${automate_token}

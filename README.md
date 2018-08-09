@@ -41,19 +41,25 @@ terraform apply
 * Run `docker-run.sh -h` to see the help menu
 
 ```
-$ ./docker-chef.sh -h
+[user@host ~]$ ./docker-chef.sh -h
 This is a control script for starting|stopping Chef Server and Chef Automate docker services.
 
 You must specify the following options:
  -s [automate|chef-server]           REQUIRED: Services type: Chef Server or Chef Automate
  -a [stop|start]                     REQUIRED: Action type: start or stop services
  -n [container name]                 OPTIONAL: The docker container name. Leaving blank implies ALL
+ -l [path]                           OPTIONAL: Apply the Automate License from [path]
+ -g [gather-logs]                    OPTIONAL: Save container logs to .gz
  -h                                  OPTIONAL: Print this help message
 
  ex. ./docker-chef.sh -s chef-server -a start            # starts up all Chef Server services
  ex. ./docker-chef.sh -s automate -a stop -n logstash    # stops Automate's logstash service
+ ex. ./docker-chef.sh -s automate -g                     # saves all Automate container logs to .gz
+ ex. ./docker-chef.sh -s chef-server -g -n postgresql    # saves Chef Server Postgresql logs to .gz
+ ex. ./docker-chef.sh -s automate -l /path/to/delivery.license       # applies Automate license from /path/to/delivery.license
 
-$
+
+[user@host ~]$
 ```
 
 Example `group`
@@ -243,7 +249,7 @@ All container logs are directed to STDOUT. You should employ a Docker logging me
 
 To view the status of any container:
 
-docker run:
+Run:
 
 ```
 docker logs <container name or id>
@@ -265,30 +271,41 @@ workflow-server.default hook[health_check]:(HK): {"status":"pong","configuration
 "pong"},"node_health":{"status":"pong"}}}]}
 ```
 
+In order to Gather up logs for Support:
+
+```
+[user@host ~]$ ./docker-chef.sh -s automate -g
+Service type: automate
+Gathering logs for all automate services..
+Gathering logs for automate-nginx
+Gathering logs for workflow-server
+Gathering logs for notifications
+Gathering logs for compliance
+Gathering logs for logstash
+Gathering logs for rabbitmq
+Gathering logs for elasticsearch
+Gathering logs for postgresql
+Logs saved to ip-172-31-21-134-20180809010141-logs.tar.gz
+[user@host ~]$
+```
+
 ## Automate License
 
 As the `$USER_ID` user on the Automate host, run the following commands to apply an Automate license.
 
-First copy the license to the host and place it in `$DATA_MOUNT/workflow-server_svc/workflow-server/var/`
-Next, log into the `workflow-server` container.
-```
-$ docker exec -it workflow-server bash
-```
+First copy the license to the host and place it anywhere on the filesystem.
+In the example below, the license was copied to /tmp.
 
-Create and export an environment variable to contain the Supervisor CTL gateway port for this
-particular container.
+Apply the license:
 ```
-$ export SUP_PORT=$($(hab pkg path core/curl)/bin/curl -s http://127.0.0.1:9631/butterfly | $(hab pkg path core/jq-static)/bin/jq '.service.list."workflow-server.default"[].service.sys.ctl_gateway_port' -e -c -M -r)
-```
-
-Finally, use the `hab file upload ..` command to upload the license to the Habitat service.
-```
-$ hab file upload workflow-server.default $(date +'%s') /hab/svc/workflow-server/var/delivery.license -r 127.0.0.1:$SUP_PORT
-» Uploading file /hab/svc/workflow-server/var/delivery.license to 1532653445 incarnation workflow-server.default
+[user@host ~]$ ./docker-chef.sh -s automate -l /tmp/delivery.license
+Service type: automate
+Applying license /tmp/delivery.license
+» Uploading file /hab/svc/workflow-server/var/delivery.license to 1533776245 incarnation workflow-server.default
 Ω Creating service file
-↑ Applying via peer 127.0.0.1:9635
+↑ Applying via peer 127.0.0.1:9809
 ★ Uploaded file
-$
+[user@host ~]$
 ```
 
 ## Running `hab sup *` commands

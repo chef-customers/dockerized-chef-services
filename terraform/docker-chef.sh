@@ -6,7 +6,6 @@
 # AUTOMATE_DOCKER_ORIGIN - denotes the docker origin (dockerhub ID) or default to `chefdemo`
 # CHEF_SERVER_VERSION -  the version identifier tag on the Chef Server packages
 # AUTOMATE_VERSION -  the version identifier tag on the postgresql and elasticsearch packages from the `chefdemo` docker origin
-# HOST_IP - the IP address of the docker host. 172.17.0.1 is commonly the docker0 interface which is fine
 # AUTOMATE_ENABLED - enable the Automate data collector (true or false)
 # AUTOMATE_SERVER - the IP address or hostname of the Automate server
 # AUTOMATE_TOKEN - the token for the Automate server data collector
@@ -16,8 +15,12 @@
 # USER_ID - the user ID to use (numeric)
 # GROUP_ID - the group ID to use (numeric)
 # DOCKER_REQUIRES_SUDO - [true|false] whether or not docker requires sudo to run when invoked by the user running this script
-
+# DOCKER_LOG_DRIVER - Logging driver for the container or default to journald
 # The above variables should all be set in a file named env.sh that lives beside this script.
+
+# Determine the IP address of the docker host.
+export HOST_IP=$(hostname --ip-address)
+
 THISDIR="$(dirname "$(which "$0")")"
 if [ -f "${THISDIR}/env.sh" ]; then
  . "${THISDIR}/env.sh"
@@ -29,6 +32,7 @@ You must specify the following options:
  -s [automate|chef-server]           REQUIRED: Services type: Chef Server or Chef Automate
  -a [stop|start]                     REQUIRED: Action type: start or stop services
  -n [container name]                 OPTIONAL: The docker container name. Leaving blank implies ALL
+ -l [path]                           OPTIONAL: Apply the Automate License from [path]
  -g [gather-logs]                    OPTIONAL: Save container logs to .gz
  -h                                  OPTIONAL: Print this help message
 
@@ -36,6 +40,7 @@ You must specify the following options:
  ex. $0 -s automate -a stop -n logstash    # stops Automate's logstash service
  ex. $0 -s automate -g                     # saves all Automate container logs to .gz
  ex. $0 -s chef-server -g -n postgresql    # saves Chef Server Postgresql logs to .gz
+ ex. $0 -s automate -l /path/to/delivery.license       # applies Automate license from /path/to/delivery.license
 
 "
 
@@ -48,7 +53,7 @@ if [ $# -eq 0 ]; then
   usage
 fi
 
-while getopts "s:a:n:gh" opt; do
+while getopts "s:a:n:l:gh" opt; do
   case $opt in
     s)
       echo "Service type: $OPTARG"
@@ -64,6 +69,9 @@ while getopts "s:a:n:gh" opt; do
       ;;
     g)
       export GATHER_LOGS=true
+      ;;
+    l)
+      export AUTOMATE_LICENSE_PATH=$OPTARG
       ;;
     h)
       usage
@@ -92,7 +100,7 @@ postgresql["supargs"]=""
 
 declare -A elasticsearch
 elasticsearch["image"]="${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/elasticsearch5:${AUTOMATE_VERSION:-stable}"
-elasticsearch["supargs"]="--peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9651 --listen-http 0.0.0.0:9661 --listen-ctl 0.0.0.0:9633"
+elasticsearch["supargs"]="--peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9651 --listen-http 0.0.0.0:9661 --listen-ctl 0.0.0.0:9800"
 elasticsearch["env"]="HAB_ELASTICSEARCH5=[runtime]
 heapsize = \"4g\"
 "
@@ -107,22 +115,22 @@ ssl_port = \"8443\"
 [secrets.data_collector]
 token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506}\"
 "
-chef_server_ctl["supargs"]="--peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9650 --listen-http 0.0.0.0:9660 --listen-ctl 0.0.0.0:9634"
+chef_server_ctl["supargs"]="--peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9650 --listen-http 0.0.0.0:9660 --listen-ctl 0.0.0.0:9801"
 
 declare -A oc_id
 oc_id["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_id:${CHEF_SERVER_VERSION:-stable}"
 oc_id["env"]=""
-oc_id["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9652 --listen-http 0.0.0.0:9662 --listen-ctl 0.0.0.0:9635"
+oc_id["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9652 --listen-http 0.0.0.0:9662 --listen-ctl 0.0.0.0:9802"
 
 declare -A bookshelf
 bookshelf["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/bookshelf:${CHEF_SERVER_VERSION:-stable}"
 bookshelf["env"]=""
-bookshelf["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9653 --listen-http 0.0.0.0:9663 --listen-ctl 0.0.0.0:9636"
+bookshelf["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9653 --listen-http 0.0.0.0:9663 --listen-ctl 0.0.0.0:9803"
 
 declare -A oc_bifrost
 oc_bifrost["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_bifrost:${CHEF_SERVER_VERSION:-stable}"
 oc_bifrost["env"]=""
-oc_bifrost["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9654 --listen-http 0.0.0.0:9664 --listen-ctl 0.0.0.0:9637"
+oc_bifrost["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9654 --listen-http 0.0.0.0:9664 --listen-ctl 0.0.0.0:9804"
 
 declare -A oc_erchef
 oc_erchef["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_erchef:${CHEF_SERVER_VERSION:-stable}"
@@ -136,11 +144,11 @@ keygen_cache_size = 10
 keygen_start_size = 0
 keygen_timeout = 20000
 "
-oc_erchef["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind bookshelf:bookshelf.default --bind oc_bifrost:oc_bifrost.default --bind database:postgresql.default --bind elasticsearch:elasticsearch5.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9655 --listen-http 0.0.0.0:9665 --listen-ctl 0.0.0.0:9638"
+oc_erchef["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind bookshelf:bookshelf.default --bind oc_bifrost:oc_bifrost.default --bind database:postgresql.default --bind elasticsearch:elasticsearch5.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9655 --listen-http 0.0.0.0:9665 --listen-ctl 0.0.0.0:9805"
 
 declare -A chef_server_nginx
 chef_server_nginx["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/chef-server-nginx:${CHEF_SERVER_VERSION:-stable}"
-chef_server_nginx["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind oc_erchef:oc_erchef.default --bind oc_bifrost:oc_bifrost.default --bind oc_id:oc_id.default --bind bookshelf:bookshelf.default --bind elasticsearch:elasticsearch5.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9656 --listen-http 0.0.0.0:9666 --listen-ctl 0.0.0.0:9639"
+chef_server_nginx["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind oc_erchef:oc_erchef.default --bind oc_bifrost:oc_bifrost.default --bind oc_id:oc_id.default --bind bookshelf:bookshelf.default --bind elasticsearch:elasticsearch5.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9656 --listen-http 0.0.0.0:9666 --listen-ctl 0.0.0.0:9806"
 chef_server_nginx["env"]='HAB_CHEF_SERVER_NGINX=
 access_log = "/dev/stdout"
 '
@@ -157,12 +165,12 @@ default_pass = 'chefrocks'
 [rabbitmq.management]
 enabled = true
 "
-rabbitmq["supargs"]="--peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9650 --listen-http 0.0.0.0:9660 --listen-ctl 0.0.0.0:9633"
+rabbitmq["supargs"]="--peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9650 --listen-http 0.0.0.0:9660 --listen-ctl 0.0.0.0:9807"
 
 declare -A logstash
 #logstash["image"]="irvingpop/logstash"
 logstash["image"]="${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/logstash:${AUTOMATE_VERSION:-stable}"
-logstash["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind elasticsearch:elasticsearch5.default --bind rabbitmq:rabbitmq.default --listen-gossip 0.0.0.0:9652 --listen-http 0.0.0.0:9662 --listen-ctl 0.0.0.0:9634"
+logstash["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind elasticsearch:elasticsearch5.default --bind rabbitmq:rabbitmq.default --listen-gossip 0.0.0.0:9652 --listen-http 0.0.0.0:9662 --listen-ctl 0.0.0.0:9808"
 logstash["env"]="HAB_LOGSTASH=
 java_heap_size=\"2g\"
 pipeline_batch_size=40
@@ -178,12 +186,12 @@ token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb
 [mlsa]
 accept = true
 "
-workflow_server["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind elasticsearch:elasticsearch5.default --bind rabbitmq:rabbitmq.default --listen-gossip 0.0.0.0:9653 --listen-http 0.0.0.0:9663 --listen-ctl 0.0.0.0:9635"
+workflow_server["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind elasticsearch:elasticsearch5.default --bind rabbitmq:rabbitmq.default --listen-gossip 0.0.0.0:9653 --listen-http 0.0.0.0:9663 --listen-ctl 0.0.0.0:9809"
 
 declare -A notifications
 notifications["image"]="${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/notifications:${AUTOMATE_VERSION:-stable}"
 notifications["env"]=""
-notifications["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind elasticsearch:elasticsearch5.default --bind rabbitmq:rabbitmq.default --listen-gossip 0.0.0.0:9654 --listen-http 0.0.0.0:9664 --listen-ctl 0.0.0.0:9636"
+notifications["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind elasticsearch:elasticsearch5.default --bind rabbitmq:rabbitmq.default --listen-gossip 0.0.0.0:9654 --listen-http 0.0.0.0:9664 --listen-ctl 0.0.0.0:9810"
 
 declare -A compliance
 compliance["image"]="${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/compliance:${AUTOMATE_VERSION:-stable}"
@@ -192,7 +200,7 @@ host = \"0.0.0.0\"
 [profiles]
 secrets_key = \"12345678901234567890123456789012\"
 "
-compliance["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind postgresql:postgresql.default --bind elasticsearch:elasticsearch5.default --bind workflow:workflow-server.default --listen-gossip 0.0.0.0:9655 --listen-http 0.0.0.0:9665 --listen-ctl 0.0.0.0:9637"
+compliance["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind postgresql:postgresql.default --bind elasticsearch:elasticsearch5.default --bind workflow:workflow-server.default --listen-gossip 0.0.0.0:9655 --listen-http 0.0.0.0:9665 --listen-ctl 0.0.0.0:9811"
 
 declare -A automate_nginx
 automate_nginx["image"]="${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/automate-nginx:${AUTOMATE_VERSION:-stable}"
@@ -202,7 +210,7 @@ ssl_port = ${PILOT_HTTPS_PORT:-8443}
 [mlsa]
 accept = true
 "
-automate_nginx["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind compliance:compliance.default --bind elasticsearch:elasticsearch5.default --bind workflow:workflow-server.default --bind notifications:notifications.default --listen-gossip 0.0.0.0:9656 --listen-http 0.0.0.0:9666 --listen-ctl 0.0.0.0:9638"
+automate_nginx["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind compliance:compliance.default --bind elasticsearch:elasticsearch5.default --bind workflow:workflow-server.default --bind notifications:notifications.default --listen-gossip 0.0.0.0:9656 --listen-http 0.0.0.0:9666 --listen-ctl 0.0.0.0:9812"
 
 # Service functions
 #
@@ -227,11 +235,10 @@ docker_svc_start () {
   echo "Ensuring $dirs directories exist and removing stale LOCK files"
   mkdir -p $dirs
   rm -f ${DATA_MOUNT:-/mnt/hab}/${1}_sup/default/LOCK
-  $(sudo_cmd) docker run --rm -it \
+  $(sudo_cmd) docker run --rm -i \
     --name="${1}" \
     --env="HOME=/hab/svc/${1}/data" \
     --env="${!env:-ILOVECHEF=1}" \
-    --volume ${DATA_MOUNT:-/mnt/hab}/CTL_SECRET:/hab/sup/default/CTL_SECRET:ro \
     --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
     --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
     --volume ${DATA_MOUNT:-/mnt/hab}/${1}_svc:/hab/svc \
@@ -242,7 +249,8 @@ docker_svc_start () {
     --ulimit nofile=65536:65536 \
     --user="${USER_ID:-42}:${GROUP_ID:-42}" \
     --network=host \
-    --detach=${DOCKER_DETACH_CONTAINER:-true} \
+    -d=${DOCKER_DETACH_CONTAINER:-true} \
+    --log-driver=${DOCKER_LOG_DRIVER:-journald} \
     ${!image} \
     ${!supargs} --permanent-peer
 }
@@ -280,6 +288,7 @@ tar_svc_logs() {
   mkdir $LOG_DIR
 
   for svc in "${arr[@]}"; do
+    echo "Gathering logs for $svc"
     $(sudo_cmd) docker logs "$svc" > $LOG_DIR/$svc.log
   done
 
@@ -288,8 +297,6 @@ tar_svc_logs() {
   rm -rf $LOG_DIR
   echo "Logs saved to $LOG_GZ"
 }
-
-
 
 gatherlogs_all () {
   echo "Gathering logs for all $SERVICE_TYPE services.."
@@ -315,6 +322,14 @@ gatherlogs_svc () {
   tar_svc_logs "${array[@]}"
   exit 0
 }
+
+apply_automate_license () {
+  echo "Applying license $1"
+  cp -f $1 ${DATA_MOUNT:-/mnt/hab}/workflow-server_svc/workflow-server/var/delivery.license
+  $(sudo_cmd) docker exec -it workflow-server hab file upload workflow-server.default $(date +'%s') /hab/svc/workflow-server/var/delivery.license  --remote-sup 127.0.0.1:9809
+  exit 0
+}
+
 start_all () {
   case "$1" in
     chef-server)
@@ -343,6 +358,13 @@ case "$SERVICE_TYPE" in
      usage
      ;;
   automate|chef-server)
+    case "$AUTOMATE_LICENSE_PATH" in
+      "")
+        ;;
+       *)
+        apply_automate_license "$AUTOMATE_LICENSE_PATH"
+        ;;
+    esac
     case "$GATHER_LOGS" in
       true)
         case "$SERVICE_NAME" in
