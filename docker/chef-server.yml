@@ -48,7 +48,7 @@ services:
         hard: 65536
     volumes:
       - ${PWD}/CTL_SECRET:/hab/sup/default/CTL_SECRET
-      - elasticsearch-data:/hab/svc/elasticsearch/data
+      - elasticsearch-data:/hab/svc/elasticsearch5/data
 
   oc_id:
     image: ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_id:${CHEF_SERVER_VERSION:-latest}
