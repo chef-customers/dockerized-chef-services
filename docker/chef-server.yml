@@ -1,5 +1,5 @@
 # Configurable environment variables:
-# CHEF_SERVER_DOCKER_ORIGIN - denotes the docker origin (dockerhub ID) or default to `chefserverofficial`
+# CHEF_SERVER_DOCKER_ORIGIN - denotes the docker origin (dockerhub ID) or default to `chef`
 # AUTOMATE_DOCKER_ORIGIN - denotes the docker origin (dockerhub ID) or default to `chefdemo`
 # CHEF_SERVER_VERSION -  the version identifier tag on the Chef Server packages
 # AUTOMATE_VERSION -  the version identifier tag on the postgresql and elasticsearch packages from the `chefdemo` docker origin
@@ -22,7 +22,7 @@ services:
       - postgresql-data:/hab/svc/postgresql/data
 
   chef-server-ctl:
-    image: ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/chef-server-ctl:${CHEF_SERVER_VERSION:-latest}
+    image: ${CHEF_SERVER_DOCKER_ORIGIN:-chef}/chef-server-ctl:${CHEF_SERVER_VERSION:-latest}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --listen-gossip 0.0.0.0:9650
@@ -51,7 +51,7 @@ services:
       - elasticsearch-data:/hab/svc/elasticsearch5/data
 
   oc_id:
-    image: ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_id:${CHEF_SERVER_VERSION:-latest}
+    image: ${CHEF_SERVER_DOCKER_ORIGIN:-chef}/oc_id:${CHEF_SERVER_VERSION:-latest}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind database:postgresql.default
@@ -62,7 +62,7 @@ services:
       - ${PWD}/CTL_SECRET:/hab/sup/default/CTL_SECRET
 
   bookshelf:
-    image: ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/bookshelf:${CHEF_SERVER_VERSION:-latest}
+    image: ${CHEF_SERVER_DOCKER_ORIGIN:-chef}/bookshelf:${CHEF_SERVER_VERSION:-latest}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind database:postgresql.default
@@ -73,7 +73,7 @@ services:
       - ${PWD}/CTL_SECRET:/hab/sup/default/CTL_SECRET
 
   oc_bifrost:
-    image: ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_bifrost:${CHEF_SERVER_VERSION:-latest}
+    image: ${CHEF_SERVER_DOCKER_ORIGIN:-chef}/oc_bifrost:${CHEF_SERVER_VERSION:-latest}
     network_mode: host
     command: --peer ${HOST_IP:-172.17.0.1}
       --bind database:postgresql.default
@@ -84,7 +84,7 @@ services:
       - ${PWD}/CTL_SECRET:/hab/sup/default/CTL_SECRET
 
   oc_erchef:
-    image: ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_erchef:${CHEF_SERVER_VERSION:-latest}
+    image: ${CHEF_SERVER_DOCKER_ORIGIN:-chef}/oc_erchef:${CHEF_SERVER_VERSION:-latest}
     network_mode: host
     volumes:
       - erchef-data:/hab/svc/oc_erchef/data
@@ -111,7 +111,7 @@ services:
       - ${PWD}/CTL_SECRET:/hab/sup/default/CTL_SECRET
 
   chef-server-nginx:
-    image: ${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/chef-server-nginx:${CHEF_SERVER_VERSION:-latest}
+    image: ${CHEF_SERVER_DOCKER_ORIGIN:-chef}/chef-server-nginx:${CHEF_SERVER_VERSION:-latest}
     network_mode: host
     tty: true
     stdin_open: true

@@ -2,7 +2,7 @@
 
 # Configurable shell environment variables:
 #
-# CHEF_SERVER_DOCKER_ORIGIN - denotes the docker origin (dockerhub ID) or default to `chefserverofficial`
+# CHEF_SERVER_DOCKER_ORIGIN - denotes the docker origin (dockerhub ID) or default to `chef`
 # AUTOMATE_DOCKER_ORIGIN - denotes the docker origin (dockerhub ID) or default to `chefdemo`
 # CHEF_SERVER_VERSION -  the version identifier tag on the Chef Server packages
 # AUTOMATE_VERSION -  the version identifier tag on the postgresql and elasticsearch packages from the `chefdemo` docker origin
@@ -108,7 +108,7 @@ heapsize = \"4g\"
 # Chef Server
 #
 declare -A chef_server_ctl
-chef_server_ctl["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/chef-server-ctl:${CHEF_SERVER_VERSION:-stable}"
+chef_server_ctl["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chef}/chef-server-ctl:${CHEF_SERVER_VERSION:-stable}"
 chef_server_ctl["env"]="HAB_CHEF_SERVER_CTL=[chef_server_api]
 ip = \"${HOST_IP:-172.17.0.1}\"
 ssl_port = \"8443\"
@@ -118,22 +118,22 @@ token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb
 chef_server_ctl["supargs"]="--peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9650 --listen-http 0.0.0.0:9660 --listen-ctl 0.0.0.0:9801"
 
 declare -A oc_id
-oc_id["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_id:${CHEF_SERVER_VERSION:-stable}"
+oc_id["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chef}/oc_id:${CHEF_SERVER_VERSION:-stable}"
 oc_id["env"]=""
 oc_id["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9652 --listen-http 0.0.0.0:9662 --listen-ctl 0.0.0.0:9802"
 
 declare -A bookshelf
-bookshelf["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/bookshelf:${CHEF_SERVER_VERSION:-stable}"
+bookshelf["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chef}/bookshelf:${CHEF_SERVER_VERSION:-stable}"
 bookshelf["env"]=""
 bookshelf["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9653 --listen-http 0.0.0.0:9663 --listen-ctl 0.0.0.0:9803"
 
 declare -A oc_bifrost
-oc_bifrost["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_bifrost:${CHEF_SERVER_VERSION:-stable}"
+oc_bifrost["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chef}/oc_bifrost:${CHEF_SERVER_VERSION:-stable}"
 oc_bifrost["env"]=""
 oc_bifrost["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9654 --listen-http 0.0.0.0:9664 --listen-ctl 0.0.0.0:9804"
 
 declare -A oc_erchef
-oc_erchef["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_erchef:${CHEF_SERVER_VERSION:-stable}"
+oc_erchef["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chef}/oc_erchef:${CHEF_SERVER_VERSION:-stable}"
 oc_erchef["env"]="HAB_OC_ERCHEF=[data_collector]
 enabled = ${AUTOMATE_ENABLED:-false}
 server = \"${AUTOMATE_SERVER:-localhost}\"
@@ -147,7 +147,7 @@ keygen_timeout = 20000
 oc_erchef["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind bookshelf:bookshelf.default --bind oc_bifrost:oc_bifrost.default --bind database:postgresql.default --bind elasticsearch:elasticsearch5.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9655 --listen-http 0.0.0.0:9665 --listen-ctl 0.0.0.0:9805"
 
 declare -A chef_server_nginx
-chef_server_nginx["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/chef-server-nginx:${CHEF_SERVER_VERSION:-stable}"
+chef_server_nginx["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chef}/chef-server-nginx:${CHEF_SERVER_VERSION:-stable}"
 chef_server_nginx["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind oc_erchef:oc_erchef.default --bind oc_bifrost:oc_bifrost.default --bind oc_id:oc_id.default --bind bookshelf:bookshelf.default --bind elasticsearch:elasticsearch5.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9656 --listen-http 0.0.0.0:9666 --listen-ctl 0.0.0.0:9806"
 chef_server_nginx["env"]='HAB_CHEF_SERVER_NGINX=
 access_log = "/dev/stdout"
