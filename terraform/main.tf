@@ -33,6 +33,7 @@ data "template_file" "env_sh" {
     automate_admin_password   = "${var.automate_admin_password}"
     automate_enabled          = "${var.automate_enabled}"
     automate_token            = "${var.automate_token}"
+    automate_ip               = "${aws_instance.automate_cluster.*.private_ip[0]}"
     chef_server_docker_origin = "${var.chef_server_docker_origin}"
     chef_server_version       = "${var.chef_server_version}"
     automate_docker_origin    = "${var.automate_docker_origin}"
@@ -106,6 +107,9 @@ resource "null_resource" "provision_cluster" {
     private_key = "${file("${var.aws_key_pair_file}")}"
     host        = "${aws_instance.automate_cluster.*.public_dns[count.index]}"
   }
+  triggers {
+    template = "${data.template_file.env_sh.rendered}"
+  }
   provisioner "file" {
     source      = "${path.module}/setup.sh"
     destination = "/home/${var.aws_ami_user}/setup.sh"
@@ -140,7 +144,6 @@ resource "null_resource" "provision_cluster" {
   provisioner "remote-exec" {
     inline = [
       "sudo chmod a+x /home/${var.container_username}/*sh",
-      "sudo sed -i 's/AUTOMATE_SERVER_IP_VALUE/${aws_instance.automate_cluster.*.private_ip[0]}/' /home/${var.container_username}/env.sh",
       "sudo chown -R ${var.container_uid}:${var.container_gid} ${var.container_data_mount}",
       "sudo chown -R ${var.container_uid}:${var.container_gid} /home/${var.container_username}",
       "sudo -Hu ${var.container_username} /home/${var.container_username}/docker-chef.sh -s ${element(var.tag_name, count.index)} -a start",
