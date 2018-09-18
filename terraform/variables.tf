@@ -112,7 +112,7 @@ variable "automate_token" {
 }
 
 variable "chef_server_docker_origin" {
-  default     = "chefserverofficial"
+  default     = "chef"
   description = "The docker origin (dockerhub ID) from where to pull down docker images."
 }
 
@@ -122,8 +122,8 @@ variable "automate_docker_origin" {
 }
 
 variable "chef_server_version" {
-  default     = "latest"
-  description = "The version of the Chef Server container to use. latest, or a tag from: https://hub.docker.com/r/chefserverofficial/oc_erchef/tags/"
+  default     = "unstable"
+  description = "The version of the Chef Server container to use. unstable, or a tag from: https://hub.docker.com/r/chef/oc_erchef/tags/"
 }
 
 variable "automate_version" {
