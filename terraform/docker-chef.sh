@@ -92,7 +92,7 @@ done
 
 declare -A postgresql
 postgresql["image"]="${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/postgresql:${AUTOMATE_VERSION:-stable}"
-postgresql["env"]="HAB_POSTGRESQL=[superuser]
+postgresql["toml"]="HAB_POSTGRESQL=[superuser]
 name = 'hab'
 password = 'chefrocks'
 "
@@ -100,41 +100,56 @@ postgresql["supargs"]=""
 
 declare -A elasticsearch
 elasticsearch["image"]="${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/elasticsearch5:${AUTOMATE_VERSION:-stable}"
-elasticsearch["supargs"]="--peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9651 --listen-http 0.0.0.0:9661 --listen-ctl 0.0.0.0:9800"
-elasticsearch["env"]="HAB_ELASTICSEARCH5=[runtime]
+elasticsearch["toml"]="HAB_ELASTICSEARCH5=[runtime]
 heapsize = \"4g\"
 "
+elasticsearch["supargs"]="--peer ${HOST_IP:-172.17.0.1}  --listen-gossip 0.0.0.0:9650 --listen-http 0.0.0.0:9660 --listen-ctl 0.0.0.0:9800"
+elasticsearch["gossip"]="0.0.0.0:9650"
+elasticsearch["http"]="0.0.0.0:9660"
+elasticsearch["ctl"]="0.0.0.0:9800"
 
 # Chef Server
 #
 declare -A chef_server_ctl
 chef_server_ctl["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/chef-server-ctl:${CHEF_SERVER_VERSION:-stable}"
-chef_server_ctl["env"]="HAB_CHEF_SERVER_CTL=[chef_server_api]
+chef_server_ctl["toml"]="HAB_CHEF_SERVER_CTL=[chef_server_api]
 ip = \"${HOST_IP:-172.17.0.1}\"
 ssl_port = \"8443\"
 [secrets.data_collector]
 token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506}\"
 "
-chef_server_ctl["supargs"]="--peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9650 --listen-http 0.0.0.0:9660 --listen-ctl 0.0.0.0:9801"
+chef_server_ctl["supargs"]="--peer ${HOST_IP:-172.17.0.1}"
+chef_server_ctl["gossip"]="0.0.0.0:9651"
+chef_server_ctl["http"]="0.0.0.0:9661"
+chef_server_ctl["ctl"]="0.0.0.0:9801"
 
 declare -A oc_id
 oc_id["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_id:${CHEF_SERVER_VERSION:-stable}"
-oc_id["env"]=""
-oc_id["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9652 --listen-http 0.0.0.0:9662 --listen-ctl 0.0.0.0:9802"
+oc_id["toml"]=""
+oc_id["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default"
+oc_id["gossip"]="0.0.0.0:9652"
+oc_id["http"]="0.0.0.0:9662"
+oc_id["ctl"]="0.0.0.0:9802"
 
 declare -A bookshelf
 bookshelf["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/bookshelf:${CHEF_SERVER_VERSION:-stable}"
-bookshelf["env"]=""
-bookshelf["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9653 --listen-http 0.0.0.0:9663 --listen-ctl 0.0.0.0:9803"
+bookshelf["toml"]=""
+bookshelf["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default"
+bookshelf["gossip"]="0.0.0.0:9653"
+bookshelf["http"]="0.0.0.0:9663"
+bookshelf["ctl"]="0.0.0.0:9803"
 
 declare -A oc_bifrost
 oc_bifrost["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_bifrost:${CHEF_SERVER_VERSION:-stable}"
-oc_bifrost["env"]=""
-oc_bifrost["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9654 --listen-http 0.0.0.0:9664 --listen-ctl 0.0.0.0:9804"
+oc_bifrost["toml"]=""
+oc_bifrost["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind chef-server-ctl:chef-server-ctl.default"
+oc_bifrost["gossip"]="0.0.0.0:9654"
+oc_bifrost["http"]="0.0.0.0:9664"
+oc_bifrost["ctl"]="0.0.0.0:9804"
 
 declare -A oc_erchef
 oc_erchef["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/oc_erchef:${CHEF_SERVER_VERSION:-stable}"
-oc_erchef["env"]="HAB_OC_ERCHEF=[data_collector]
+oc_erchef["toml"]="HAB_OC_ERCHEF=[data_collector]
 enabled = ${AUTOMATE_ENABLED:-false}
 server = \"${AUTOMATE_SERVER:-localhost}\"
 port = 443
@@ -144,41 +159,52 @@ keygen_cache_size = 10
 keygen_start_size = 0
 keygen_timeout = 20000
 "
-oc_erchef["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind bookshelf:bookshelf.default --bind oc_bifrost:oc_bifrost.default --bind database:postgresql.default --bind elasticsearch:elasticsearch5.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9655 --listen-http 0.0.0.0:9665 --listen-ctl 0.0.0.0:9805"
+oc_erchef["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind bookshelf:bookshelf.default --bind oc_bifrost:oc_bifrost.default --bind database:postgresql.default --bind elasticsearch:elasticsearch5.default --bind chef-server-ctl:chef-server-ctl.default"
+oc_erchef["gossip"]="0.0.0.0:9655"
+oc_erchef["http"]="0.0.0.0:9665"
+oc_erchef["ctl"]="0.0.0.0:9805"
 
 declare -A chef_server_nginx
 chef_server_nginx["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/chef-server-nginx:${CHEF_SERVER_VERSION:-stable}"
-chef_server_nginx["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind oc_erchef:oc_erchef.default --bind oc_bifrost:oc_bifrost.default --bind oc_id:oc_id.default --bind bookshelf:bookshelf.default --bind elasticsearch:elasticsearch5.default --bind chef-server-ctl:chef-server-ctl.default --listen-gossip 0.0.0.0:9656 --listen-http 0.0.0.0:9666 --listen-ctl 0.0.0.0:9806"
-chef_server_nginx["env"]='HAB_CHEF_SERVER_NGINX=
+chef_server_nginx["toml"]='HAB_CHEF_SERVER_NGINX=
 access_log = "/dev/stdout"
 '
+chef_server_nginx["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind oc_erchef:oc_erchef.default --bind oc_bifrost:oc_bifrost.default --bind oc_id:oc_id.default --bind bookshelf:bookshelf.default --bind elasticsearch:elasticsearch5.default --bind chef-server-ctl:chef-server-ctl.default"
+chef_server_nginx["gossip"]="0.0.0.0:9656"
+chef_server_nginx["http"]="0.0.0.0:9666"
+chef_server_nginx["ctl"]="0.0.0.0:9806"
 
 # Automate
 #
 
 declare -A rabbitmq
 rabbitmq["image"]="${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/rabbitmq:${AUTOMATE_VERSION:-stable}"
-rabbitmq["env"]="HAB_RABBITMQ=[rabbitmq]
+rabbitmq["toml"]="HAB_RABBITMQ=[rabbitmq]
 default_vhost = '/insights'
 default_user = 'insights'
 default_pass = 'chefrocks'
 [rabbitmq.management]
 enabled = true
 "
-rabbitmq["supargs"]="--peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9650 --listen-http 0.0.0.0:9660 --listen-ctl 0.0.0.0:9807"
+rabbitmq["supargs"]="--peer ${HOST_IP:-172.17.0.1} --listen-gossip 0.0.0.0:9657 --listen-http 0.0.0.0:9667 --listen-ctl 0.0.0.0:9807"
+rabbitmq["gossip"]="0.0.0.0:9657"
+rabbitmq["http"]="0.0.0.0:9667"
+rabbitmq["ctl"]="0.0.0.0:9807"
 
 declare -A logstash
-#logstash["image"]="irvingpop/logstash"
 logstash["image"]="${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/logstash:${AUTOMATE_VERSION:-stable}"
-logstash["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind elasticsearch:elasticsearch5.default --bind rabbitmq:rabbitmq.default --listen-gossip 0.0.0.0:9652 --listen-http 0.0.0.0:9662 --listen-ctl 0.0.0.0:9808"
-logstash["env"]="HAB_LOGSTASH=
+logstash["toml"]="HAB_LOGSTASH=
 java_heap_size=\"2g\"
 pipeline_batch_size=40
 "
+logstash["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind elasticsearch:elasticsearch5.default --bind rabbitmq:rabbitmq.default --listen-gossip 0.0.0.0:9658 --listen-http 0.0.0.0:9668 --listen-ctl 0.0.0.0:9808"
+logstash["gossip"]="0.0.0.0:9658"
+logstash["http"]="0.0.0.0:9668"
+logstash["ctl"]="0.0.0.0:9808"
 
 declare -A workflow_server
 workflow_server["image"]="${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/workflow-server:${AUTOMATE_VERSION:-stable}"
-workflow_server["env"]="HAB_WORKFLOW_SERVER=
+workflow_server["toml"]="HAB_WORKFLOW_SERVER=
 enterprise = \"${ENTERPRISE:-default}\"
 default_admin_password = \"${ADMIN_PASSWORD:-chefrocks}\"
 [data_collector]
@@ -186,31 +212,43 @@ token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb
 [mlsa]
 accept = true
 "
-workflow_server["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind elasticsearch:elasticsearch5.default --bind rabbitmq:rabbitmq.default --listen-gossip 0.0.0.0:9653 --listen-http 0.0.0.0:9663 --listen-ctl 0.0.0.0:9809"
+workflow_server["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind database:postgresql.default --bind elasticsearch:elasticsearch5.default --bind rabbitmq:rabbitmq.default --listen-gossip 0.0.0.0:9659 --listen-http 0.0.0.0:9669 --listen-ctl 0.0.0.0:9809"
+workflow_server["gossip"]="0.0.0.0:9659"
+workflow_server["http"]="0.0.0.0:9669"
+workflow_server["ctl"]="0.0.0.0:9809"
 
 declare -A notifications
 notifications["image"]="${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/notifications:${AUTOMATE_VERSION:-stable}"
-notifications["env"]=""
-notifications["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind elasticsearch:elasticsearch5.default --bind rabbitmq:rabbitmq.default --listen-gossip 0.0.0.0:9654 --listen-http 0.0.0.0:9664 --listen-ctl 0.0.0.0:9810"
+notifications["toml"]=""
+notifications["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind elasticsearch:elasticsearch5.default --bind rabbitmq:rabbitmq.default --listen-gossip 0.0.0.0:9660 --listen-http 0.0.0.0:9670 --listen-ctl 0.0.0.0:9810"
+notifications["gossip"]="0.0.0.0:9660"
+notifications["http"]="0.0.0.0:9670"
+notifications["ctl"]="0.0.0.0:9810"
 
 declare -A compliance
 compliance["image"]="${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/compliance:${AUTOMATE_VERSION:-stable}"
-compliance["env"]="HAB_COMPLIANCE_SERVICE=[service]
+compliance["toml"]="HAB_COMPLIANCE_SERVICE=[service]
 host = \"0.0.0.0\"
 [profiles]
 secrets_key = \"12345678901234567890123456789012\"
 "
-compliance["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind postgresql:postgresql.default --bind elasticsearch:elasticsearch5.default --bind workflow:workflow-server.default --listen-gossip 0.0.0.0:9655 --listen-http 0.0.0.0:9665 --listen-ctl 0.0.0.0:9811"
+compliance["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind postgresql:postgresql.default --bind elasticsearch:elasticsearch5.default --bind workflow:workflow-server.default --listen-gossip 0.0.0.0:9661 --listen-http 0.0.0.0:9671 --listen-ctl 0.0.0.0:9811"
+compliance["gossip"]="0.0.0.0:9661"
+compliance["http"]="0.0.0.0:9671"
+compliance["ctl"]="0.0.0.0:9811"
 
 declare -A automate_nginx
 automate_nginx["image"]="${AUTOMATE_DOCKER_ORIGIN:-chefdemo}/automate-nginx:${AUTOMATE_VERSION:-stable}"
-automate_nginx["env"]="HAB_AUTOMATE_NGINX=
+automate_nginx["toml"]="HAB_AUTOMATE_NGINX=
 port = ${PILOT_HTTP_PORT:-8080}
 ssl_port = ${PILOT_HTTPS_PORT:-8443}
 [mlsa]
 accept = true
 "
-automate_nginx["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind compliance:compliance.default --bind elasticsearch:elasticsearch5.default --bind workflow:workflow-server.default --bind notifications:notifications.default --listen-gossip 0.0.0.0:9656 --listen-http 0.0.0.0:9666 --listen-ctl 0.0.0.0:9812"
+automate_nginx["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind compliance:compliance.default --bind elasticsearch:elasticsearch5.default --bind workflow:workflow-server.default --bind notifications:notifications.default --listen-gossip 0.0.0.0:9662 --listen-http 0.0.0.0:9672 --listen-ctl 0.0.0.0:9812"
+automate_nginx["gossip"]="0.0.0.0:9662"
+automate_nginx["http"]="0.0.0.0:9672"
+automate_nginx["ctl"]="0.0.0.0:9812"
 
 # Service functions
 #
@@ -228,7 +266,10 @@ docker_svc_start () {
   svc=$(echo "$1"|tr '-' '_')
   image="$svc[image]"
   supargs="$svc[supargs]"
-  env="$svc[env]"
+  toml="$svc[toml]"
+  gossip="$svc[gossip]"
+  http="$svc[http]"
+  ctl="$svc[ctl]"
 
   echo "Starting ${!image}"
   dirs="${DATA_MOUNT:-/mnt/hab}/${1}_svc ${DATA_MOUNT:-/mnt/hab}/${1}_sup"
@@ -238,7 +279,10 @@ docker_svc_start () {
   $(sudo_cmd) docker run --rm -i \
     --name="${1}" \
     --env="HOME=/hab/svc/${1}/data" \
-    --env="${!env:-ILOVECHEF=1}" \
+    --env="${!toml:-ILOVECHEF=1}" \
+    --env="HAB_LISTEN_GOSSIP=${!gossip:-0.0.0.0:9638}" \
+    --env="HAB_LISTEN_HTTP=${!http:-0.0.0.0:9631}" \
+    --env="HAB_LISTEN_CTL=${!ctl:-0.0.0.0:9632}" \
     --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
     --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
     --volume ${DATA_MOUNT:-/mnt/hab}/${1}_svc:/hab/svc \
@@ -333,7 +377,7 @@ apply_automate_license () {
 
   echo "Applying license from $1 to workflow-server Habitat service"
   cp -f $1 ${DATA_MOUNT:-/mnt/hab}/workflow-server_svc/workflow-server/var/delivery.license
-  $(sudo_cmd) docker exec -it workflow-server hab file upload workflow-server.default $(date +'%s') /hab/svc/workflow-server/var/delivery.license  --remote-sup 127.0.0.1:9809
+  $(sudo_cmd) docker exec -it workflow-server hab file upload workflow-server.default $(date +'%s') /hab/svc/workflow-server/var/delivery.license --remote-sup 127.0.0.1:9809
   exit 0
 }
 
