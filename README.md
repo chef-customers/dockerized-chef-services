@@ -234,16 +234,17 @@ accept = true
 [auth]
   [auth.ldap]
   enabled = true
-  attr_full_name = "fullName"
-  attr_login = "sAMAccountName"
-  attr_mail = "mail"
-  base_dn = "OU=Employees,OU=Domain users,DC=examplecorp,DC=com"
-  bind_dn = "ldapbind"
-  bind_dn_password = "secret123"
-  encryption = "start_tls"
-  hosts = ["ad.mycompany.com"]
+  attr_full_name = \"fullName\"
+  attr_login = \"sAMAccountName\"
+  attr_mail = \"mail\"
+  base_dn = \"OU=Employees,OU=Domain users,DC=examplecorp,DC=com\"
+  bind_dn = \"ldapbind\"
+  bind_dn_password = \"secret123\"
+  encryption = \"start_tls\"
+  hosts = [\"ad.mycompany.com\"]
   port = 3269
   timeout = 5000
+"
 ```
 
 ## Logging
