@@ -222,6 +222,7 @@ docker exec -it workflow-server automate-ctl (subcommands)
 ```
 
 Setting the LDAP configuration: Adjust the environment variables passed to the workflow-server container:
+
 ```
 workflow_server["env"]="HAB_WORKFLOW_SERVER=
 enterprise = \"${ENTERPRISE:-default}\"
@@ -243,7 +244,6 @@ accept = true
   hosts = ["ad.mycompany.com"]
   port = 3269
   timeout = 5000
-"
 ```
 
 ## Logging
