@@ -69,7 +69,7 @@ variable "tag_name" {
 }
 
 variable "aws_instance_types" {
-  default     = ["m5.large", "m5.large"]
+  default     = ["m5.xlarge", "m5.xlarge"]
   description = "An array of instance types (sizes). tag_name indicates which instances map to which type."
 }
 

@@ -15,7 +15,7 @@ docker_requires_sudo = "false"
 # Change if needed from the defaults below
 # aws_ami_user = "centos"
 # aws_ami_id = ""
-# aws_instance_types = ["m5.large", "m5.large"]
+# aws_instance_types = ["m5.xlarge", "m5.xlarge"]
 # container_username = "chef-dev-ux"
 # container_uid = "9999"
 # container_gid = "8888"
