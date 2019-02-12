@@ -198,7 +198,7 @@ logstash["toml"]="HAB_LOGSTASH=
 java_heap_size=\"2g\"
 pipeline_batch_size=40
 "
-logstash["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind elasticsearch:elasticsearch5.default --bind rabbitmq:rabbitmq.default --listen-gossip 0.0.0.0:9658 --listen-http 0.0.0.0:9668 --listen-ctl 0.0.0.0:9808"
+logstash["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind elasticsearch:elasticsearch5.default --bind rabbitmq:rabbitmq.default"
 logstash["gossip"]="0.0.0.0:9658"
 logstash["http"]="0.0.0.0:9708"
 logstash["ctl"]="127.0.0.1:9808"
@@ -283,7 +283,7 @@ docker_svc_start () {
     --env="${!toml:-ILOVECHEF=1}" \
     --env="HAB_LISTEN_GOSSIP=${!gossip:-0.0.0.0:9638}" \
     --env="HAB_LISTEN_HTTP=${!http:-0.0.0.0:9631}" \
-    --env="HAB_LISTEN_CTL=${!ctl:-0.0.0.0:9632}" \
+    --env="HAB_LISTEN_CTL=${!ctl:-127.0.0.1:9632}" \
     --volume ${DATA_MOUNT:-/mnt/hab}/passwd:/etc/passwd:ro \
     --volume ${DATA_MOUNT:-/mnt/hab}/group:/etc/group:ro \
     --volume ${DATA_MOUNT:-/mnt/hab}/${1}_svc:/hab/svc \
