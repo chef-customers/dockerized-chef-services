@@ -19,7 +19,7 @@
 # The above variables should all be set in a file named env.sh that lives beside this script.
 
 # Determine the IP address of the docker host.
-HOST_IP=$(hostname --ip-address)
+HOST_IP=$(netstat -alnt | grep 8443 | awk '{print $4}' | sort -u | grep -vE '0.0.0.0|127.0.0.1')
 
 THISDIR="$(dirname "$(which "$0")")"
 if [ -f "${THISDIR}/env.sh" ]; then
