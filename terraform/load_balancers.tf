@@ -13,8 +13,8 @@ resource "aws_lb" "automate" {
   subnets            = ["${data.aws_subnet_ids.aws_vpc_autosubnets.ids[0]}", "${data.aws_subnet_ids.aws_vpc_autosubnets.ids[2]}"]
 
   tags {
-    X-Dept    = "${var.tag_dept}"
-    X-Contact = "${var.tag_contact}"
+    X-Dept     = "${var.tag_dept}"
+    X-Contact  = "${var.tag_contact}"
     Created-By = "terraform"
   }
 }
@@ -37,7 +37,7 @@ resource "aws_lb_target_group" "automate-https" {
   vpc_id   = "${var.aws_vpc}"
 
   health_check {
-    path = "/api/_status"
+    path     = "/api/_status"
     protocol = "HTTPS"
   }
 }
@@ -93,8 +93,8 @@ resource "aws_lb" "chefserver" {
   subnets            = ["${data.aws_subnet_ids.aws_vpc_autosubnets.ids[0]}", "${data.aws_subnet_ids.aws_vpc_autosubnets.ids[2]}"]
 
   tags {
-    X-Dept    = "${var.tag_dept}"
-    X-Contact = "${var.tag_contact}"
+    X-Dept     = "${var.tag_dept}"
+    X-Contact  = "${var.tag_contact}"
     Created-By = "terraform"
   }
 }
@@ -106,7 +106,7 @@ resource "aws_lb_target_group" "chefserver" {
   vpc_id   = "${var.aws_vpc}"
 
   health_check {
-    path = "/_status"
+    path     = "/_status"
     protocol = "HTTPS"
   }
 }
