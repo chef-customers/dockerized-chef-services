@@ -116,6 +116,8 @@ chef_server_ctl["image"]="${CHEF_SERVER_DOCKER_ORIGIN:-chefserverofficial}/chef-
 chef_server_ctl["toml"]="HAB_CHEF_SERVER_CTL=[chef_server_api]
 ip = \"${HOST_IP:-172.17.0.1}\"
 ssl_port = \"8443\"
+[pedant_config]
+search_server = \"http://${HOST_IP:-172.17.0.1}:9200\"
 [secrets.data_collector]
 token = \"${AUTOMATE_TOKEN:-93a49a4f2482c64126f7b6015e6b0f30284287ee4054ff8807fb63d9cbd1c506}\"
 "

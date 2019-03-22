@@ -127,7 +127,7 @@ variable "chef_server_version" {
 }
 
 variable "automate_version" {
-  default     = "1.8.155"
+  default     = "1.8.158"
   description = "The version of the Chef Automate container to use. stable, or a tag from: https://hub.docker.com/r/chefdemo/workflow-server/tags/"
 }
 
