@@ -161,6 +161,8 @@ keygen_cache_workers = 2
 keygen_cache_size = 10
 keygen_start_size = 0
 keygen_timeout = 20000
+[oc_chef_wm]
+max_request_size = 2000000
 "
 oc_erchef["supargs"]="--peer ${HOST_IP:-172.17.0.1} --bind bookshelf:bookshelf.default --bind oc_bifrost:oc_bifrost.default --bind database:postgresql.default --bind elasticsearch:elasticsearch5.default --bind chef-server-ctl:chef-server-ctl.default"
 oc_erchef["gossip"]="0.0.0.0:9655"
