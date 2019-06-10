@@ -335,3 +335,21 @@ jeremymv2/workflow-server/1.8.0-dev/20180726192935  standalone  up     857      
 
 Note: You will need to replace `workflow-server.default` with `CONTAINER-NAME.default` for the other
 containers.
+
+## Known Ports
+
+### Automate
+
+| Service/Container | Port | Protocol | Notes |
+| -------------- | ---- | ----- | ----- |
+| automate-nginx | 8080 | http | status endpoint at `/status/version` |
+| automate-nginx | 8443 | https | status endpoint at `/status/version` |
+| workflow-server | 9611 | http | status endpoint at `/api/_status` |
+| workflow-server | 8989 | https+git | No status endpoint |
+| compliance | 2134 | http | No status endpoint |
+| notifications | 4000 | http | No status endpoint |
+| logstash | 3232 | http | No status endpoint |
+| rabbitmq | 5672 | RabbitMQ | |
+| rabbitmq | 15672 | http | RabbitMQ Management webUI |
+| postgresql | 5432 | PostgreSQL | |
+| elasticsearch | 9200 | http | status endpoint at `/_cluster/health?pretty` |
