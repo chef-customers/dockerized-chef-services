@@ -1,6 +1,8 @@
 # dockerized-chef-services
 Docker definitions for Chef Server and Automate 1.x
 
+**Note: This repository highlights example pattern usage only and is not supported or officially maintained. USE AT YOUR OWN RISK!**
+
 ## Current Release
 Please check the [releases](https://github.com/chef-customers/dockerized-chef-services/releases) for the current release versions.
 
